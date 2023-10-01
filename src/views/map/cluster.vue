@@ -3,6 +3,7 @@
 </template>
 
 <script>
+import { prePath } from "@/utils/file.ts";
 import { onMounted } from "vue";
 import * as Cesium from "cesium";
 Cesium.Ion.defaultAccessToken =
@@ -10,10 +11,10 @@ Cesium.Ion.defaultAccessToken =
 export default {
   name: "CesiumMap",
   setup() {
-    const viewer = null;
+    let viewer = null;
 
     onMounted(() => {
-      const viewer = new Cesium.Viewer("cesiumContainer", {
+      viewer = new Cesium.Viewer("cesiumContainer", {
         animation: false, //是否显示动画工具
         timeline: false, //是否显示时间轴工具
         fullscreenButton: false //是否显示全屏按钮工具
@@ -52,9 +53,7 @@ export default {
 
       //加载点数据
       const kmlDataSourcePromise = viewer.dataSources.add(
-        Cesium.KmlDataSource.load(
-          "./src/assets/map/kml/facilities/facilities.kml"
-        )
+        Cesium.KmlDataSource.load(prePath + "kml/facilities/facilities.kml")
       );
 
       kmlDataSourcePromise.then(function (dataSource) {
@@ -93,10 +92,6 @@ export default {
         /* afterAddDataSource(dataSource); */
       });
     });
-
-    return {
-      viewer
-    };
   }
 };
 </script>
