@@ -1,3 +1,11 @@
+<!--
+ * @Author: bigFace2019 599069310@qq.com
+ * @Date: 2023-09-30 11:14:48
+ * @LastEditors: bigFace2019 599069310@qq.com
+ * @LastEditTime: 2023-09-30 14:32:16
+ * @FilePath: \my-vue-appd:\code\aboutMap\pure-admin-thin\README.md
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 <h1>vue-pure-admin精简版（非国际化版本）</h1>
 
 [![license](https://img.shields.io/github/license/pure-admin/vue-pure-admin.svg)](LICENSE)
@@ -38,3 +46,7 @@
 原则上不收取任何费用及版权，可商用，不过如需二次开源（比如用此平台二次开发并开源，要求前端代码必须开源免费）请联系作者获取许可！（免费，走个记录而已）
 
 [MIT © 2020-present, pure-admin](./LICENSE)
+
+## 需求 1
+
+1.左边是一棵树结构，右边是地图。左边树可以是人，车，点击之后可以进行定位，点开人或者车可以对该对象进行操作。 2.点击树上的人和车，可以进行定位，右键可以进行历史轨迹查询 3.点击地图上人和车，可以进行查看历史轨迹查询。

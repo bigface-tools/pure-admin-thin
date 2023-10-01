@@ -5,7 +5,7 @@ import { warpperEnv } from "./build";
 import { getPluginsList } from "./build/plugins";
 import { include, exclude } from "./build/optimize";
 import { UserConfigExport, ConfigEnv, loadEnv } from "vite";
-
+import cesium from "vite-plugin-cesium";
 /** 当前执行node命令时文件夹的地址（工作目录） */
 const root: string = process.cwd();
 
@@ -17,7 +17,8 @@ const pathResolve = (dir: string): string => {
 /** 设置别名 */
 const alias: Record<string, string> = {
   "@": pathResolve("src"),
-  "@build": pathResolve("build")
+  "@build": pathResolve("build"),
+  "@file": pathResolve("./src/assets/map")
 };
 
 const { dependencies, devDependencies, name, version } = pkg;
@@ -45,7 +46,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       // 本地跨域代理 https://cn.vitejs.dev/config/server-options.html#server-proxy
       proxy: {}
     },
-    plugins: getPluginsList(command, VITE_CDN, VITE_COMPRESSION),
+    plugins: [cesium(), ...getPluginsList(command, VITE_CDN, VITE_COMPRESSION)],
     // https://cn.vitejs.dev/config/dep-optimization-options.html#dep-optimization-options
     optimizeDeps: {
       include,
