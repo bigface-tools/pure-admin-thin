@@ -1,0 +1,188 @@
+<template>
+  <div class="cesium-map">
+    <div class="toolbar">
+      <select id="dropdown" @change="change">
+        <option value="snow">雪</option>
+        <option value="rain">雨</option>
+        <option value="null">null</option>
+      </select>
+    </div>
+    <div class="cesium-map" id="cesiumContainer" />
+  </div>
+</template>
+
+<script>
+import { onMounted } from "vue";
+import * as Cesium from "cesium";
+
+Cesium.Ion.defaultAccessToken =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58";
+export default {
+  name: "CesiumMap",
+  setup() {
+    let viewer = null;
+
+    onMounted(() => {
+      viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否显示动画工具
+        timeline: false, //是否显示时间轴工具
+        fullscreenButton: false, //是否显示全屏按钮工具
+        shouldAnimate: true, //必须开启
+        terrainProvider: Cesium.createWorldTerrain()
+      });
+
+      //粒子特效位置
+      const position = new Cesium.Cartesian3.fromDegrees(
+        114.39664,
+        30.52052,
+        2000
+      );
+      const modelMatrix = new Cesium.Matrix4.fromTranslation(position);
+
+      //模拟下雪天粒子特效常量定义
+      const snowRadius = 100000.0; //下雪的范围半径
+      const minimumSnowImageSize = new Cesium.Cartesian2(10, 10); //雪花最小尺寸
+      const maximumSnowImageSize = new Cesium.Cartesian2(20, 20); //雪花最大尺寸
+
+      //创建Cartesian3对象，用于在回调函数中实时更新粒子位置
+      const snowGravityScratch = new Cesium.Cartesian3();
+      //粒子更新回调函数
+      function snowUpdate(particle) {
+        //计算提供的笛卡尔坐标系的标准化形式
+        Cesium.Cartesian3.normalize(
+          particle.position, //要标准化的笛卡尔坐标
+          snowGravityScratch //结果存储对象
+        );
+        //将提供的笛卡尔分量乘以标准的标量
+        Cesium.Cartesian3.multiplyByScalar(
+          snowGravityScratch, //要缩放的笛卡尔坐标
+          //要与之相乘的标量，负值代表粒子位置下降即粒子从上往下落
+          Cesium.Math.randomBetween(-30.0, -300.0),
+          snowGravityScratch //结果存储对象
+        );
+        //粒子位置根据snowGravityScratch变化
+        Cesium.Cartesian3.add(
+          particle.position,
+          snowGravityScratch,
+          particle.position
+        );
+      }
+
+      // 雨
+      const rainRadius = 100000.0; //下雨的范围半径
+      const rainImageSize = new Cesium.Cartesian2(20, 35); //15,30分别代表宽高
+
+      const rainGravityScratch = new Cesium.Cartesian3();
+      //粒子更新回调函数
+      function rainUpdate(particle) {
+        //计算提供的笛卡尔坐标系的标准化形式
+        Cesium.Cartesian3.normalize(
+          particle.position, //要标准化的笛卡尔坐标
+          rainGravityScratch //结果存储对象
+        );
+        //将提供的笛卡尔分量乘以标准的标量
+        Cesium.Cartesian3.multiplyByScalar(
+          rainGravityScratch, //要缩放的笛卡尔坐标
+          -1000.0, //要与之相乘的标量，雨比雪下落速度快的多 所以这个值负的多点
+          rainGravityScratch //结果存储对象
+        );
+        //粒子位置根据rainGravityScratch变化
+        Cesium.Cartesian3.add(
+          particle.position,
+          rainGravityScratch,
+          particle.position
+        );
+      }
+
+      //粒子系统-雪配置项
+      const snowOption = {
+        modelMatrix: modelMatrix, //将粒子系统从模型转换为世界坐标的4x4转换矩阵。
+        lifetime: 15.0, //粒子系统发射粒子的时间（以秒为单位）
+        emitter: new Cesium.SphereEmitter(snowRadius), //该系统的粒子发射器
+        startScale: 0.5, //在粒子寿命开始时应用于粒子图像的初始比例
+        endScale: 1.0, //在粒子寿命结束时应用于粒子图像的最终比例。
+        image: "./src/assets/map/RasterImage/图片/snowflake_particle.png", //粒子贴图
+        emissionRate: 7000.0, //每秒要发射的粒子数
+        startColor: Cesium.Color.WHITE.withAlpha(0.0), //粒子在其生命初期的颜色。
+        endColor: Cesium.Color.WHITE.withAlpha(1.0), //粒子寿命结束时的颜色。
+        minimumImageSize: minimumSnowImageSize, //设置宽度的最小范围，以高度为单位，在该范围上可以随机缩放粒子图像的尺寸(以像素为单位)
+        maximumImageSize: maximumSnowImageSize, //设置最大宽度边界，以高度为单位，在该边界以下可以随机缩放粒子图像的尺寸(以像素为单位)
+        updateCallback: snowUpdate //每帧都要调用一次回调函数以更新粒子
+      };
+
+      //粒子系统-雨配置项
+      const rainOption = {
+        modelMatrix: modelMatrix, //将粒子系统从模型转换为世界坐标的4x4转换矩阵。
+        lifetime: 15.0, //粒子系统发射粒子的时间（以秒为单位）
+        emitter: new Cesium.SphereEmitter(rainRadius), //该系统的粒子发射器
+        startScale: 1.0, //在粒子寿命开始时应用于粒子图像的初始比例
+        endScale: 0.0, //在粒子寿命结束时应用于粒子图像的最终比例。
+        image: "./src/assets/map/RasterImage/图片/circular_particle.png", //粒子贴图
+        emissionRate: 9000.0, //每秒要发射的粒子数
+        startColor: new Cesium.Color(1, 1, 1, 0.0), //粒子在其生命初期的颜色。
+        endColor: new Cesium.Color(1.0, 1.0, 1.0, 0.98), //粒子寿命结束时的颜色。
+        imageSize: rainImageSize, //粒子贴图尺寸
+        updateCallback: rainUpdate //每帧都要调用一次回调函数以更新粒子
+      };
+
+      //默认下雪天
+      viewer.scene.primitives.add(new Cesium.ParticleSystem(snowOption));
+
+      //下拉框回调函数
+      const dropdown = document.getElementById("dropdown");
+      const change = () => {
+        switch (dropdown.value) {
+          case "snow":
+            viewer.scene.primitives.removeAll();
+            viewer.scene.primitives.add(new Cesium.ParticleSystem(snowOption));
+            break;
+          case "rain":
+            viewer.scene.primitives.removeAll();
+            viewer.scene.primitives.add(new Cesium.ParticleSystem(rainOption));
+            break;
+          case "null":
+            viewer.scene.primitives.removeAll();
+            break;
+          default:
+            break;
+        }
+      };
+
+      //设置相机视角
+      /* viewer.scene.camera.setView({
+      destination:
+        Cesium.Cartesian3.fromDegrees(114.39664, 30.40052, 10000),
+      orientation: {
+        heading: 4.731089976107251,
+        pitch: -0.32003481981370063,
+      },
+    }) */
+
+      //设置相机初始位置
+      viewer.scene.camera.setView({
+        destination: new Cesium.Cartesian3(
+          -2318006.190591779,
+          5016113.738321363,
+          3239729.8052793955
+        ),
+        orientation: {
+          heading: 5.0433812878480655,
+          pitch: -0.25943108890985744,
+          roll: 0.000002292722656171975
+        },
+        duration: 0.0
+      });
+      return {
+        viewer,
+        change
+      };
+    });
+  }
+};
+</script>
+
+<style scoped>
+.cesium-map {
+  height: calc(100vh - 100px);
+}
+</style>

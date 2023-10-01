@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml>
+  <Document>
+    <Placemark>
+      <visibility>1</visibility>
+      <Style>
+        <LineStyle>
+          <color>cc0000ff</color>
+          <width>1</width>
+        </LineStyle>
+        <PolyStyle>
+          <color>4c3f7fff</color>
+          <fill>1</fill>
+          <outline>1</outline>
+        </PolyStyle>
+      </Style>
+      <ExtendedData>
+        <Data name="BaseLineType">
+          <value>0</value>
+        </Data>
+      </ExtendedData>
+      <Polygon>
+        <altitudeMode>clampToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              114.385650489532,30.5259267712624,0.00992373377084732
+              114.385650489532,30.5140184323472,0.00992373377084732
+              114.404340362118,30.5140184323472,0.00994349364191294
+              114.404340362118,30.5259267712624,0.00994349364191294
+              114.385650489532,30.5259267712624,0.00992373377084732
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>
+
