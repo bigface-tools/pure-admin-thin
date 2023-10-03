@@ -2,7 +2,7 @@
  * @Author: bigFace2019 599069310@qq.com
  * @Date: 2023-09-30 14:54:47
  * @LastEditors: bigFace2019 599069310@qq.com
- * @LastEditTime: 2023-10-01 20:38:51
+ * @LastEditTime: 2023-10-03 21:12:18
  * @FilePath: \pure-admin-thin\src\router\modules\management.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -102,6 +102,78 @@ export default {
       component: () => import("@/views/map/数据加载/高德.vue"),
       meta: {
         title: "高德"
+      }
+    },
+    {
+      path: "/map/singleModel",
+      name: "mapSingleModel",
+      component: () => import("@/views/map/三维模型/模型单体化.vue"),
+      meta: {
+        title: "模型单体化"
+      }
+    },
+    {
+      path: "/map/translate",
+      name: "mapTranslate",
+      component: () => import("@/views/map/三维模型/模型旋转平移.vue"),
+      meta: {
+        title: "模型旋转平移"
+      }
+    },
+    {
+      path: "/map/zoom",
+      name: "mapZoom",
+      component: () => import("@/views/map/三维模型/模型缩放.vue"),
+      meta: {
+        title: "模型缩放"
+      }
+    },
+    {
+      path: "/map/modelHight",
+      name: "mapModelHight",
+      component: () => import("@/views/map/三维模型/模型高度调整.vue"),
+      meta: {
+        title: "模型高度调整"
+      }
+    },
+    {
+      path: "/map/featurePick",
+      name: "mapFeaturePick",
+      component: () => import("@/views/map/三维模型/模型要素拾取.vue"),
+      meta: {
+        title: "模型要素拾取"
+      }
+    },
+    {
+      path: "/map/feature",
+      name: "mapFeature",
+      component: () => import("@/views/map/三维模型/要素风格.vue"),
+      meta: {
+        title: "要素风格"
+      }
+    },
+    {
+      path: "/map/carMove",
+      name: "mapCarMove",
+      component: () => import("@/views/map/三维模型/小车移动.vue"),
+      meta: {
+        title: "小车移动"
+      }
+    },
+    {
+      path: "/map/modelColor",
+      name: "mapModelColor",
+      component: () => import("@/views/map/三维模型/模型着色.vue"),
+      meta: {
+        title: "模型着色"
+      }
+    },
+    {
+      path: "/map/modelfit",
+      name: "mapModelfit",
+      component: () => import("@/views/map/三维模型/贴合3d模型.vue"),
+      meta: {
+        title: "贴合3d模型"
       }
     }
   ]
