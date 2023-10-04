@@ -2,7 +2,7 @@
  * @Author: bigFace2019 599069310@qq.com
  * @Date: 2023-10-03 21:03:13
  * @LastEditors: bigFace2019 599069310@qq.com
- * @LastEditTime: 2023-10-03 21:56:46
+ * @LastEditTime: 2023-10-04 12:01:04
  * @FilePath: \pure-admin-thin\src\views\map\三维模型\单体化.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -40,7 +40,7 @@ export default {
   name: "CesiumMap",
   setup() {
     let viewer = null;
-
+    let tileset = null;
     onMounted(() => {
       viewer = new Cesium.Viewer("cesiumContainer", {
         geocoder: true, //是否显示地名查找工具
@@ -56,66 +56,66 @@ export default {
 
       viewer.scene.globe.depthTestAgainstTerrain = true;
 
-      const tileset = viewer.scene.primitives.add(
+      tileset = viewer.scene.primitives.add(
         new Cesium.Cesium3DTileset({
           url: prePath + "倾斜摄影/大雁塔3DTiles/tileset.json"
         })
       );
 
       viewer.zoomTo(tileset);
+    });
 
+    //当滑动条变化时调用该函数
+    const change = () => {
       const R = document.getElementById("R");
+      //拿到滑动条当前值
+      const height = Number(R.value);
+      //文本框显示当前值
+      heightValue.value = height;
 
-      //当滑动条变化时调用该函数
-      function change() {
-        //拿到滑动条当前值
-        const height = Number(R.value);
-        //文本框显示当前值
-        heightValue.value = height;
-
-        //判断是否为数字，不是数字则return
-        if (isNaN(height)) {
-          return;
-        }
-
-        //将3D Tiles外包围球中心点从笛卡尔空间直角坐标转换为弧度表示
-        const cartographic = Cesium.Cartographic.fromCartesian(
-          tileset.boundingSphere.center //3D Tiles外包围球中心
-        );
-
-        //3D Tiles外包围球中心点原始坐标
-        const surface = Cesium.Cartesian3.fromRadians(
-          cartographic.longitude,
-          cartographic.latitude
-        );
-
-        //3D Tiles外包围球中心点坐标偏移
-        const offset = Cesium.Cartesian3.fromRadians(
-          cartographic.longitude,
-          cartographic.latitude,
-          height
-        );
-
-        //计算两个笛卡尔分量的差异
-        const translation = Cesium.Cartesian3.subtract(
-          offset,
-          surface,
-          new Cesium.Cartesian3()
-        );
-
-        //创建一个表示转换的Matrix4
-        tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+      //判断是否为数字，不是数字则return
+      if (isNaN(height)) {
+        return;
       }
 
-      change2 = () => {
-        const height = Number(heightValue.value);
-        R.value = height;
-        change();
-      };
-      return {
-        change2
-      };
-    });
+      //将3D Tiles外包围球中心点从笛卡尔空间直角坐标转换为弧度表示
+      const cartographic = Cesium.Cartographic.fromCartesian(
+        tileset.boundingSphere.center //3D Tiles外包围球中心
+      );
+
+      //3D Tiles外包围球中心点原始坐标
+      const surface = Cesium.Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude
+      );
+
+      //3D Tiles外包围球中心点坐标偏移
+      const offset = Cesium.Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        height
+      );
+
+      //计算两个笛卡尔分量的差异
+      const translation = Cesium.Cartesian3.subtract(
+        offset,
+        surface,
+        new Cesium.Cartesian3()
+      );
+
+      //创建一个表示转换的Matrix4
+      tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+    };
+
+    const change2 = () => {
+      const height = Number(heightValue.value);
+      R.value = height;
+      change();
+    };
+    return {
+      change,
+      change2
+    };
   }
 };
 </script>
