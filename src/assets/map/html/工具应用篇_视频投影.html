@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>工具应用篇_视频投影</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+</head>
+<style>
+  html,
+  body,
+  #cesiumContainer {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .toolbar {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    background-color: rgb(0, 0, 0, 0);
+  }
+</style>
+
+<body>
+
+  <div id="cesiumContainer">
+  </div>
+  <div class="toolbar">
+    <select id="dropdown" onchange="change()">
+      <option value="option1">视频墙</option>
+      <option value="option2">视频贴地</option>
+    </select>
+  </div>
+
+  <video id="myVideo" muted="true" autoplay="true" loop="true" style="display: none;">
+    <source src="https://cesium.com/public/SandcastleSampleData/big-buck-bunny_trailer.mp4" type="video/mp4">
+  </video>
+
+
+  <script>
+
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      terrainProvider: Cesium.createWorldTerrain()
+    });
+
+    /* var tileSet = viewer.scene.primitives.add(
+      new Cesium.Cesium3DTileset({
+        url: "./3D格式数据/Tileset/tileset.json"
+      })
+    );
+    //定位过去
+    viewer.zoomTo(tileSet); */
+
+    //添加OSM建筑白膜数据
+    var osmBuildingsTileset = Cesium.createOsmBuildings();
+    viewer.scene.primitives.add(osmBuildingsTileset);
+
+    function videoWall() {
+      //获取Video标签
+      const videoElement = document.getElementById("myVideo");
+      //将视频元素与模拟时钟同步
+      let synchronizer = new Cesium.VideoSynchronizer({
+        clock: viewer.clock,
+        element: videoElement
+      });
+      //自动播放
+      viewer.clock.shouldAnimate = true;
+      //创建墙
+      var greenWall = viewer.entities.add({
+        name: "视频墙",
+        wall: {
+          positions: Cesium.Cartesian3.fromDegreesArrayHeights([
+            114.391418, 30.524281, 120.0, 114.391918, 30.524281, 120.0,
+          ]),
+          minimumHeights: [90, 90],
+          material: videoElement,
+          outline: true,
+          shadows: Cesium.ShadowMode.ENABLED
+        },
+      })
+      viewer.zoomTo(greenWall);
+    }
+
+    function videoFusion() {
+      //获取Video标签
+      const videoElement = document.getElementById("myVideo");
+      //将视频元素与模拟时钟同步
+      let synchronizer = new Cesium.VideoSynchronizer({
+        clock: viewer.clock,
+        element: videoElement
+      });
+      //自动播放
+      viewer.clock.shouldAnimate = true;
+      var polygon = viewer.entities.add({
+        polygon: {
+          hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(
+            [114.39344518569266, 30.525768035404223,
+              114.3961071839177, 30.52566180691624,
+              114.3960458511302, 30.524014906984178,
+              114.39344432117545, 30.52402876336925,
+            ])
+          ),
+          classificationType: Cesium.ClassificationType.BOTH,
+          material: videoElement,
+          stRotation: -45,
+        },
+      })
+    }
+
+
+    videoWall();
+    var dropdown = document.getElementById('dropdown');
+    function change() {
+      switch (dropdown.value) {
+        case 'option1':
+          viewer.entities.removeAll();
+          videoWall();
+          break;
+        case 'option2':
+          viewer.entities.removeAll();
+          videoFusion();
+          break;
+        default:
+          break;
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

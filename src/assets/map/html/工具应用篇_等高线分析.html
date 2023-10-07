@@ -1,0 +1,122 @@
+
+  <!DOCTYPE html>
+  <html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <title>工具应用篇_等高线分析</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+  </head>
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+
+    .toolbar {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+  </style>
+
+  <body>
+
+    <div id="cesiumContainer"></div>
+
+    <div class="toolbar">
+      <label style="color: white;">等高距</label> <br />
+      <input type="range" min="0" max="300" step="1" oninput="change()" id="HeightSpa" value="150">
+      <input type="text" style="width:70px; " id="HeightSpaValue" value="150" onchange="heightSpaValue()"> <br>
+      <label style="color: white;">线宽</label> <br />
+      <input type="range" min="0" max="20" step="1" oninput="change()" id="LineWid" value="2">
+      <input type="text" style="width:70px; " id="LineWidValue" value="2" onchange="lineWidValue()"> <br>
+    </div>
+
+    <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      terrainProvider: Cesium.createWorldTerrain()
+    });
+    
+    
+    
+    
+    
+    //滑动条
+    function change() {
+      //拿到等高距滑动条当前值
+      var HS = Number(HeightSpa.value);
+      //等高距文本框显示当前值
+      HeightSpaValue.value = HS;
+    
+      //拿到线宽滑动条当前值
+      var LW = Number(LineWid.value);
+      //线宽文本框显示当前值
+      LineWidValue.value = LW;
+    
+    
+      
+      // 使用等高线材质
+      var material = Cesium.Material.fromType("ElevationContour");
+      
+      var contourUniforms = {};
+      // 等高距
+      contourUniforms.spacing = HS;
+      // 线宽
+      contourUniforms.width = LW;
+      // 颜色
+      contourUniforms.color = Cesium.Color.RED;
+      
+      material.uniforms =contourUniforms;
+      
+      // 设置材质
+      viewer.scene.globe.material = material;
+    
+    }
+    change();
+    
+    
+    
+    //等高距文本框
+    function heightSpaValue() {
+      var HS = Number(HeightSpaValue.value);
+      HeightSpa.value = HS;
+      change();
+    }
+    //线宽文本框
+    function lineWidValue() {
+      var LW = Number(LineWidValue.value);
+      LineWid.value = LW;
+      change();
+    }
+    
+    //移动相机视角到珠穆朗玛峰
+    viewer.camera.setView({
+      destination: new Cesium.Cartesian3(282157.6960889096, 5638892.465594703, 2978736.186473513),
+      orientation: {
+        heading: 4.747266966349747,
+        pitch: -0.2206998858596192,
+        roll: 6.280340554587955
+      }
+    });
+    
+    
+    
+    
+    </script>
+  </body>
+
+  </html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影像加载_OSM影像</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            baseLayerPicker: false, //图层选择控件
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+            //加载OSM影像
+            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+                url: 'https://a.tile.openstreetmap.org/'
+            })
+            //XYZ形式
+            /* imageryProvider : new Cesium.UrlTemplateImageryProvider({
+                url : 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c']
+            }) */
+        });
+
+
+
+    </script>
+</body>
+
+</html>

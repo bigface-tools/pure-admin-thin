@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>工具应用篇_加载室内场景</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+</head>
+<style>
+  html,
+  body,
+  #cesiumContainer {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+
+  <div id="cesiumContainer"></div>
+
+  <script>
+
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      geocoder: true,  //是否显示地名查找工具
+      homeButton: true,    //是否显示首页位置工具
+      sceneModePicker: true,   //是否显示视角模式切换工具
+      baseLayerPicker: true,   //是否显示默认图层选择工具
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+    });
+
+    const modelEntity = viewer.entities.add({
+      name: "glb模型",
+      position: new Cesium.Cartesian3.fromDegrees(120.14046454, 30.27415039),
+      model: {
+        uri: './3D格式数据/教室/scene.gltf',
+        /* minimumPixelSize: 256,
+        maxumunScale: 20000, */
+      },
+    });
+    viewer.zoomTo(modelEntity);
+    /* // 聚焦模型
+    viewer.trackedEntity = modelEntity; */
+
+
+    let lastWhellCameraPosition = undefined;
+    let lastWhellCameraPositionTimes = 0;
+    let currentCameraPosition = viewer.camera.position;
+    let ellipsoid = viewer.scene.globe.ellipsoid;
+    viewer.screenSpaceEventHandler.setInputAction(function onMouseWheel(e) {
+      if (e > 0 && lastWhellCameraPosition
+        && Math.abs(currentCameraPosition.x - lastWhellCameraPosition.x) < 0.001
+        && Math.abs(currentCameraPosition.y - lastWhellCameraPosition.y) < 0.001
+        && Math.abs(currentCameraPosition.z - lastWhellCameraPosition.z) < 0.001) {
+        if (lastWhellCameraPositionTimes > 1) {
+          console.log(e);
+          let cameraHeight = ellipsoid.cartesianToCartographic(currentCameraPosition).height;
+          viewer.camera.moveForward(cameraHeight / 50.0);
+        } else {
+          lastWhellCameraPositionTimes++;
+        }
+      } else {
+        lastWhellCameraPositionTimes = 0;
+      }
+      lastWhellCameraPosition = currentCameraPosition.clone();
+    }, Cesium.ScreenSpaceEventType.WHEEL);
+
+
+    //设置鼠标进去地下
+    //viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
+
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_空间面积测量</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		viewer.scene.globe.depthTestAgainstTerrain = true;//开启深度检测后 会有高程遮挡效果
+
+		var tileset = viewer.scene.primitives.add(
+			new Cesium.Cesium3DTileset({
+				url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+			})
+		);
+
+		viewer.zoomTo(tileset);
+
+
+		var radiansPerDegree = Math.PI / 180.0;//角度转化为弧度(rad) 
+		var degreesPerRadian = 180.0 / Math.PI;//弧度转化为角度
+
+		/*方向*/
+		function getBearing(from, to) {
+			var from = Cesium.Cartographic.fromCartesian(from);
+			var to = Cesium.Cartographic.fromCartesian(to);
+			//度转弧度表示
+			var lat1 = from.latitude * radiansPerDegree;
+			var lon1 = from.longitude * radiansPerDegree;
+			var lat2 = to.latitude * radiansPerDegree;
+			var lon2 = to.longitude * radiansPerDegree;
+			//返回从原点(0,0)到(x,y)点的线段与x轴正方向之间的平面角度(弧度值)
+			var angle = -Math.atan2(
+				Math.sin(lon1 - lon2) * Math.cos(lat2), 
+				Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2)
+				);
+			if (angle < 0) {
+				angle += Math.PI * 2.0;
+			}
+			//弧度转角度表示
+			angle = angle * degreesPerRadian;
+			return angle;
+		}
+
+		/*角度*/
+		function getAngle(p1, p2, p3) {
+			var bearing21 = getBearing(p2, p1);
+			var bearing23 = getBearing(p2, p3);
+			
+			var angle = bearing21 - bearing23;
+			if (angle < 0) {
+				angle += 360;
+			}
+			return angle;
+		}
+
+		/* 距离 */
+		function getDistance(point1, point2) {
+			//console.log('point1',point1);
+			/* var point1cartographic = Cesium.Cartographic.fromCartesian(point1);
+			var point2cartographic = Cesium.Cartographic.fromCartesian(point2); */
+
+			/* console.log('point1', point1);
+			console.log('point2', point2); */
+
+			/**根据经纬度计算出距离**/
+			var geodesic = new Cesium.EllipsoidGeodesic();
+			//设置测地线的起点和终点
+			geodesic.setEndPoints(point1, point2);
+			//获取起点和终点之间的表面距离
+			var s = geodesic.surfaceDistance;
+
+			//返回两点之间的距离 c等于(a方+b方)再开平方
+			s = Math.sqrt(Math.pow(s, 2) + Math.pow(point2.height - point1.height, 2));
+			return s;
+		}
+
+		//计算多边形面积
+		function getArea(points) {
+			var res = 0;
+			//拆分三角曲面
+			for (var i = 0; i < points.length - 2; i++) {
+				var j = (i + 1) % points.length;
+				var k = (i + 2) % points.length;
+				var totalAngle = getAngle(points[i], points[j], points[k]);
+				var totalAngle = totalAngle.toFixed();
+
+				var dis_temp1 = getDistance(pCartographic[i], pCartographic[j]);
+				var dis_temp2 = getDistance(pCartographic[j], pCartographic[k]);
+
+				console.log('dis_temp1', dis_temp1);
+				console.log('dis_temp2', dis_temp2);
+
+				console.log('totalAngle', totalAngle);
+				console.log('Math.abs(Math.sin(totalAngle))', Math.sin(totalAngle));
+				console.log('Math.abs(Math.sin(totalAngle))', Math.round(Math.sin((totalAngle * Math.PI / 180)) * 1000000) / 1000000);
+				//Math.abs为绝对值  
+				//不知道为什么Math.sin(totalAngle)值有时准确有时不准确
+				/* res += dis_temp1 * dis_temp2 * Math.abs(Math.sin(totalAngle)); */
+				//查了下 解决办法如下
+				res += dis_temp1 * dis_temp2 * Math.abs(Math.round(Math.sin((totalAngle * Math.PI / 180)) * 1000000) / 1000000);
+
+				console.log(res);
+			}
+
+			//单位是平方米
+			return res.toFixed(2);	
+		}
+
+
+
+
+
+
+		//添加label
+		function addLabel(pCartographic, text) {
+			//将label添加到最后一个点上方
+			var position = Cesium.Cartesian3.fromRadians(
+				pCartographic[pCartographic.length - 1].longitude,
+				pCartographic[pCartographic.length - 1].latitude,
+				pCartographic[pCartographic.length - 1].height)
+
+			var label = viewer.entities.add({
+				position: position,
+				label: {
+					text: text + "平方米",
+					font: '18px sans-serif',
+					fillColor: Cesium.Color.GOLD,
+					style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+					outlineWidth: 2,
+					verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+					pixelOffset: new Cesium.Cartesian2(20, -20),
+					heightReference: Cesium.HeightReference.NONE
+				}
+			});
+		}
+
+
+		//绘制实体
+		var p = [];
+		var pCartographic = [];
+		var activeShapePoints = []; //动态点数组
+		var activeShape;    //动态图形
+		var floatingPoint;  //第一个点 判断是否开始获取鼠标移动结束位置并添加至activeShapePoints
+
+		//绘制点
+		function drawPoint(position) {
+			var pointGeometry = viewer.entities.add({
+				name: "点几何对象",
+				position: position,
+				point: {
+					color: Cesium.Color.SKYBLUE,
+					pixelSize: 6,
+					outlineColor: Cesium.Color.YELLOW,
+					outlineWidth: 2,
+					disableDepthTestDistance: 1000	//当距离在1000以下不被高程遮挡
+				}
+			});
+			return pointGeometry;
+		};
+		//绘制多边形
+		function drawShape(positionData) {
+			var shape;
+			shape = viewer.entities.add({
+				polygon: {
+					hierarchy: positionData,
+					material: new Cesium.ColorMaterialProperty(Cesium.Color.SKYBLUE.withAlpha(0.7))
+				}
+			});
+			return shape;
+		}
+
+		var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		//鼠标左键
+		handler.setInputAction(function (event) {
+			var earthPosition = viewer.scene.pickPosition(event.position);
+			console.log('earthPosition', Cesium.Cartographic.fromCartesian(earthPosition));
+			pCartographic.push(Cesium.Cartographic.fromCartesian(earthPosition));
+			p.push(earthPosition);
+			// `如果鼠标不在地球上 则earthPosition是未定义
+			if (Cesium.defined(earthPosition)) {
+				//第一次点击时，通过CallbackProperty绘制动态图
+				if (activeShapePoints.length === 0) {
+					floatingPoint = drawPoint(earthPosition);
+					activeShapePoints.push(earthPosition);
+					//动态点通过CallbackProperty实时更新渲染
+					var dynamicPositions = new Cesium.CallbackProperty(function () {
+						//绘制模式是polygon 回调返回的值就要是PolygonHierarchy类型
+						return new Cesium.PolygonHierarchy(activeShapePoints);
+					}, false);
+					activeShape = drawShape(dynamicPositions);//绘制动态图
+				}
+				//添加当前点进activeShapePoints，实时渲染动态图
+				activeShapePoints.push(earthPosition);
+				drawPoint(earthPosition);
+			}
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+		//鼠标移动
+		handler.setInputAction(function (event) {
+			if (Cesium.defined(floatingPoint)) {
+				var newPosition = viewer.scene.pickPosition(event.endPosition);     //获取鼠标移动最终位置
+				if (Cesium.defined(newPosition)) {
+					//动态去除数组中最后一个点，再添加最新一个点，保证只保留鼠标位置点
+					activeShapePoints.pop();
+					activeShapePoints.push(newPosition);
+				}
+			}
+		}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+		//鼠标右键
+		handler.setInputAction(function (event) {
+			activeShapePoints.pop();//去除最后一个动态点
+			if (activeShapePoints.length) {
+				drawShape(activeShapePoints);//绘制最终图
+			}
+			console.log('points', p);
+			console.log('pCartographic', pCartographic);
+			//计算面积
+			var text = getArea(p);
+			//添加标注
+			addLabel(pCartographic, text);
+
+
+			viewer.entities.remove(floatingPoint);//移除第一个点（重复了）
+			viewer.entities.remove(activeShape);//去除动态图形
+			floatingPoint = undefined;
+			activeShape = undefined;
+			activeShapePoints = [];
+
+			//清空存储测量面积的点
+			p = [];
+			pCartographic = [];
+		}, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+
+
+
+
+	</script>
+</body>
+
+</html>

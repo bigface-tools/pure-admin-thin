@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>绘制实体_Primitive绘制贴地</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+	<!-- <script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script> -->
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.toolbar {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgb(0, 0, 0, 0);
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+	<div id="menu" class="toolbar">
+		<select id="dropdown" onchange="addPrimitive()">
+			<option value="null">null</option>
+			<option value="addPolylineGeometry">添加线</option>
+			<option value="addPolygonGeometry">添加面</option>
+			<option value="addEllipseGeometry">添加椭圆</option>
+			<option value="addCircleGeometry">添加圆</option>
+			<option value="addCorridorGeometry">添加走廊</option>
+			<option value="addRectangleGeometry">添加矩形</option>
+		</select>
+
+		<select id="dropdown2" onchange="removePrimitive()">
+			<option value="null">null</option>
+			<option value="removePolylineGeometry">删除线</option>
+			<option value="removePolygonGeometry">删除面</option>
+			<option value="removeEllipseGeometry">删除椭圆</option>
+			<option value="removeCircleGeometry">删除圆</option>
+			<option value="removeCorridorGeometry">删除走廊</option>
+			<option value="removeRectangleGeometry">删除矩形</option>
+		</select>
+	</div>
+
+	<!-- <div class="addDiv">
+		<button id="addPolylineGeometry" class="btnAddClass">添加线</button>
+		<button id="addPolygonGeometry" class="btnAddClass">添加面</button>
+		<button id="addEllipseGeometry" class="btnAddClass">添加椭圆</button>
+
+		<button id="addCircleGeometry" class="btnAddClass">添加圆</button>
+		<button id="addCorridorGeometry" class="btnAddClass">添加走廊</button>
+		<button id="addRectangleGeometry" class="btnAddClass">添加矩形</button>
+
+	</div>
+	<div class="removeDiv">
+		<button id="removePolylineGeometry" class="btnRemoveClass">删除线</button>
+		<button id="removePolygonGeometry" class="btnRemoveClass">删除面</button>
+		<button id="removeEllipseGeometry" class="btnRemoveClass">删除椭圆</button>
+
+		<button id="removeCircleGeometry" class="btnRemoveClass">删除圆</button>
+		<button id="removeCorridorGeometry" class="btnRemoveClass">删除走廊</button>
+		<button id="removeRectangleGeometry" class="btnRemoveClass">删除矩形</button>
+
+	</div> -->
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		//viewer.scene.globe.depthTestAgainstTerrain = true;
+
+		viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(108, 42, 6000000),
+
+		})
+
+
+		//绘制线
+		//定义几何形状
+		var polyline = new Cesium.GeometryInstance({
+			geometry: new Cesium.GroundPolylineGeometry({	//贴地线
+				positions: Cesium.Cartesian3.fromDegreesArray([
+					108.0, 31.0,
+					100.0, 36.0,
+					105.0, 39.0
+				]),
+				width: 5.0
+			})
+		});
+		//定义外观
+		var polylineAppearance = new Cesium.PolylineMaterialAppearance({
+			material: Cesium.Material.fromType('Color')
+		})
+		//创建GroundPrimitive
+		var addGroundPolylinePrimitive = new Cesium.GroundPolylinePrimitive({	//仅支持GroundPolylineGeometry
+			geometryInstances: polyline,
+			appearance: polylineAppearance
+		})
+
+
+
+
+		//绘制面
+		//定义几何形状
+		var polygon = new Cesium.GeometryInstance({
+			geometry: new Cesium.PolygonGeometry({
+				polygonHierarchy: new Cesium.PolygonHierarchy(
+					Cesium.Cartesian3.fromDegreesArray([
+						110.0, 30.0,
+						114.0, 38.0,
+						106.0, 35.0,
+						108.0, 30.0,
+
+					])
+				)
+			})
+		});
+		//定义外观
+		var polygonAppearance = new Cesium.MaterialAppearance({
+			material: Cesium.Material.fromType('Color', {
+				color: new Cesium.Color(0.5, 0.8, 0.0, 0.6)
+			}),
+			faceForward: true
+		})
+		//创建GroundPrimitive
+		var addPolygonGroundPrimitive = new Cesium.GroundPrimitive({	//贴地面 
+			geometryInstances: polygon,
+			appearance: polygonAppearance
+		})
+
+
+
+
+		//绘制椭圆
+		//定义几何形状
+		var ellipse = new Cesium.GeometryInstance({
+			geometry: new Cesium.EllipseGeometry({
+				center: Cesium.Cartesian3.fromDegrees(105, 40.0),
+				semiMajorAxis: 500000.0,
+				semiMinorAxis: 300000.0,
+				rotation: Cesium.Math.toRadians(60.0)
+			})
+		});
+		//定义外观
+		var ellipseAppearance = new Cesium.EllipsoidSurfaceAppearance({
+			material: Cesium.Material.fromType('Stripe')
+		})
+		//创建GroundPrimitive
+		var addEllipseGroundPrimitive = new Cesium.GroundPrimitive({	//贴地椭圆
+			geometryInstances: ellipse,
+			appearance: ellipseAppearance
+		})
+
+
+
+
+		//绘制圆
+		//定义几何形状
+		var circle = new Cesium.GeometryInstance({
+			geometry: new Cesium.CircleGeometry({
+				center: Cesium.Cartesian3.fromDegrees(100, 45.0),
+				radius: 300000.0,
+			})
+		});
+		//定义外观
+		var circleAppearance = new Cesium.EllipsoidSurfaceAppearance({
+			material: Cesium.Material.fromType('Grid')
+		})
+		//创建GroundPrimitive
+		var addCircleGroundPrimitive = new Cesium.GroundPrimitive({	//贴地圆
+			geometryInstances: circle,
+			appearance: circleAppearance
+		})
+
+
+
+
+		//绘制矩形
+		//定义几何形状
+		var rectangle = new Cesium.GeometryInstance({
+			geometry: new Cesium.RectangleGeometry({
+				rectangle: Cesium.Rectangle.fromDegrees(95.0, 39.0, 100.0, 42.0),
+				//height: 10000.0
+			})
+		});
+		//定义外观
+		var rectangleAppearance = new Cesium.EllipsoidSurfaceAppearance({
+			material: Cesium.Material.fromType('Water')
+		})
+		//创建GroundPrimitive
+		var addRectangleGroundPrimitive = new Cesium.GroundPrimitive({		//贴地矩形
+			geometryInstances: rectangle,
+			appearance: rectangleAppearance
+		})
+
+
+
+
+		//绘制走廊
+		//定义几何形状
+		var corridor = new Cesium.GeometryInstance({
+			geometry: new Cesium.CorridorGeometry({
+				vertexFormat: Cesium.VertexFormat.POSITION_ONLY,
+				positions: Cesium.Cartesian3.fromDegreesArray([100.0, 40.0, 105.0, 35.0, 102.0, 33.0]),
+				width: 100000
+			}),
+			attributes: {
+				color: Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(0.2, 0.5, 0.2, 0.7))
+			}
+		});
+		//定义外观
+		var corridorAppearance = new Cesium.PerInstanceColorAppearance({
+			flat: true,
+			translucent: true
+		})
+		//创建GroundPrimitive
+		var addCorridorGroundPrimitive = new Cesium.GroundPrimitive({		//贴地走廊
+			geometryInstances: corridor,
+			appearance: corridorAppearance
+		})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		var primitiveCollection = new Cesium.PrimitiveCollection();
+		primitiveCollection.destroyPrimitives = false;
+		viewer.scene.primitives.add(primitiveCollection);
+
+
+		var dropdown = document.getElementById('dropdown');
+		var dropdown2 = document.getElementById('dropdown2');
+		function addPrimitive(){
+			switch (dropdown.value){
+				case 'addPolylineGeometry':
+					if (!primitiveCollection.contains(addGroundPolylinePrimitive))
+						primitiveCollection.add(addGroundPolylinePrimitive)
+					break;
+				case 'addPolygonGeometry':
+					if (!primitiveCollection.contains(addPolygonGroundPrimitive))
+						primitiveCollection.add(addPolygonGroundPrimitive)
+					break;
+				case 'addEllipseGeometry':
+					if (!primitiveCollection.contains(addEllipseGroundPrimitive))
+						primitiveCollection.add(addEllipseGroundPrimitive)
+					break;
+
+				case 'addCircleGeometry':
+					if (!primitiveCollection.contains(addCircleGroundPrimitive))
+						primitiveCollection.add(addCircleGroundPrimitive)
+					break;
+				case 'addCorridorGeometry':
+					if (!primitiveCollection.contains(addCorridorGroundPrimitive))
+						primitiveCollection.add(addCorridorGroundPrimitive)
+					break;
+				case 'addRectangleGeometry':
+					if (!primitiveCollection.contains(addRectangleGroundPrimitive))
+						primitiveCollection.add(addRectangleGroundPrimitive)
+					break;
+				default:
+					break;
+			}
+		}
+
+		function removePrimitive(){
+			switch (dropdown2.value){
+				case 'removePolylineGeometry':
+					primitiveCollection.remove(addGroundPolylinePrimitive)
+					break;
+				case 'removePolygonGeometry':
+					primitiveCollection.remove(addPolygonGroundPrimitive)
+					break;
+				case 'removeEllipseGeometry':
+					primitiveCollection.remove(addEllipseGroundPrimitive)
+					break;
+
+				case 'removeCircleGeometry':
+					primitiveCollection.remove(addCircleGroundPrimitive)
+					break;
+				case 'removeCorridorGeometry':
+					primitiveCollection.remove(addCorridorGroundPrimitive)
+					break;
+				case 'removeRectangleGeometry':
+					primitiveCollection.remove(addRectangleGroundPrimitive)
+					break;
+				default:
+					break;
+			}
+		}
+
+
+
+		/* $('.btnRemoveClass').on("click", function (e) {
+			switch (e.target.id) {
+				case 'removePolylineGeometry':
+					primitiveCollection.remove(addGroundPolylinePrimitive)
+					break;
+				case 'removePolygonGeometry':
+					primitiveCollection.remove(addPolygonGroundPrimitive)
+					break;
+				case 'removeEllipseGeometry':
+					primitiveCollection.remove(addEllipseGroundPrimitive)
+					break;
+
+				case 'removeCircleGeometry':
+					primitiveCollection.remove(addCircleGroundPrimitive)
+					break;
+				case 'removeCorridorGeometry':
+					primitiveCollection.remove(addCorridorGroundPrimitive)
+					break;
+				case 'removeRectangleGeometry':
+					primitiveCollection.remove(addRectangleGroundPrimitive)
+					break;
+				default:
+					break;
+			}
+		})
+
+		$('.btnAddClass').on("click", function (e) {
+			switch (e.target.id) {
+				case 'addPolylineGeometry':
+					if (!primitiveCollection.contains(addGroundPolylinePrimitive))
+						primitiveCollection.add(addGroundPolylinePrimitive)
+					break;
+				case 'addPolygonGeometry':
+					if (!primitiveCollection.contains(addPolygonGroundPrimitive))
+						primitiveCollection.add(addPolygonGroundPrimitive)
+					break;
+				case 'addEllipseGeometry':
+					if (!primitiveCollection.contains(addEllipseGroundPrimitive))
+						primitiveCollection.add(addEllipseGroundPrimitive)
+					break;
+
+				case 'addCircleGeometry':
+					if (!primitiveCollection.contains(addCircleGroundPrimitive))
+						primitiveCollection.add(addCircleGroundPrimitive)
+					break;
+				case 'addCorridorGeometry':
+					if (!primitiveCollection.contains(addCorridorGroundPrimitive))
+						primitiveCollection.add(addCorridorGroundPrimitive)
+					break;
+				case 'addRectangleGeometry':
+					if (!primitiveCollection.contains(addRectangleGroundPrimitive))
+						primitiveCollection.add(addRectangleGroundPrimitive)
+					break;
+				default:
+					break;
+			}
+		}) */
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>绘制实体_Entity管理</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+	<!-- <script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script> -->
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.toolbar {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgb(0, 0, 0, 0);
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+	<div id="menu" class="toolbar">
+		<select id="dropdown" onchange="edit()">
+			<option value="edit0">null</option>
+			<option value="edit1">虚线</option>
+			<option value="edit2">箭头线</option>
+			<option value="edit3">修改颜色</option>
+			<option value="edit4">添加条纹</option>
+			<option value="edit5">添加边框</option>
+			<option value="edit6">添加拉伸</option>
+			<option value="edit7">添加贴图</option>
+			<option value="edit8">修改角度</option>
+			<option value="edit9">显示与隐藏</option>
+			<option value="edit10">移除单个实体</option>
+			<option value="edit11">移除全部实体</option>
+		</select>
+	</div>
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+			//加载天地图影像图
+			imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+				url: "http://t{s}.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=26322dcfabb058ef85aa3fa66f0f59f0",
+				subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'], //服务负载子域
+				layer: "tdtImgLayer",
+				style: "default",
+				format: "image/jpeg",
+				tileMatrixSetID: "GoogleMapsCompatible",//使用谷歌的瓦片切片方式
+				show: true
+			})
+		});
+
+		viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(118, 30, 7000000),
+			orientation: {
+				heading: 0.010152402293521767,
+				pitch: -1.5705337480193866,
+				roll: 0.00003681052934645379
+			},
+		})
+
+		// 线
+		var addLine = viewer.entities.add({
+			id: 'line',
+			name: '线',
+			show: true,  //显示
+			polyline: {
+				positions: Cesium.Cartesian3.fromDegreesArray([111, 40, 116, 45]),
+				width: 6, //线条粗细
+				followSurface: false, //取消弯曲
+				material: Cesium.Color.RED,  //线条材质
+				//clampToGround: true
+			},
+		})
+
+		//面
+		var addPolygon = viewer.entities.add({
+			id: 'polygon',
+			name: '面',
+			polygon: {
+				hierarchy: Cesium.Cartesian3.fromDegreesArray([108, 30, 108, 36, 100, 36, 100, 30]),
+				height:0,
+				outline: false,
+				material: Cesium.Color.RED.withAlpha(0.6),
+			}
+		})
+
+
+		// 模型
+		var degree = 60;
+		var heading = Cesium.Math.toRadians(degree); //60度航向
+		var pitch = 0;
+		var roll = 0;
+		var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+		var addModel = viewer.entities.add({
+			id: 'model', //id唯一
+			name: '模型', // 名称
+			show: true,  //显示
+			position: Cesium.Cartesian3.fromDegrees(115, 33, 5000),  // 飞机位置
+			orientation: Cesium.Transforms.headingPitchRollQuaternion(Cesium.Cartesian3.fromDegrees(118, 30, 5000), hpr), //飞机航向
+			model: {
+				uri: './3D格式数据/glTF/CesiumMilkTruck.gltf',
+				minimumPixelSize: 300, //模型最小
+				maximumScale: 50000,  //模型最大
+				//color: Cesium.Color.ORANGE, // 模型颜色
+				scale: 30000, //当前比例
+			}
+		}) 
+		
+
+		var dropdown = document.getElementById('dropdown');
+		function edit(){
+			switch (dropdown.value){
+				case 'edit1':
+					addLine.polyline.material = new Cesium.PolylineDashMaterialProperty({
+						color: Cesium.Color.BLUE,
+					});
+					break;
+				case 'edit2':
+					addLine.polyline.material = new Cesium.PolylineArrowMaterialProperty(Cesium.Color.CYAN);
+					break;	
+				case 'edit3':
+					addPolygon.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+					break;
+				case 'edit4':
+					var stripeMaterial = new Cesium.StripeMaterialProperty({
+						orientation: Cesium.StripeOrientation.VERTICAL,
+						evenColor: Cesium.Color.WHITE,
+						oddColor: Cesium.Color.BLACK,
+						repeat: 16,
+					});
+					addPolygon.polygon.material = stripeMaterial;
+					break;
+				case 'edit5':
+					addPolygon.polygon.outline = true;
+					addPolygon.polygon.outlineColor = Cesium.Color.YELLOW;
+					addPolygon.polygon.outlineWidth = 30;
+					break;
+				case 'edit6':
+					addPolygon.polygon.extrudedHeight = 100000;
+					break;
+				case 'edit7':
+					addPolygon.polygon.material = "./RasterImage/图片/single.jpg";
+					break;
+				case 'edit8':
+					degree += 15;
+					addModel.orientation = Cesium.Transforms.headingPitchRollQuaternion(
+						Cesium.Cartesian3.fromDegrees(118, 30, 5000),
+						new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(degree), 0, 0))
+					break;
+				case 'edit9':
+					if (addPolygon.show != false)
+						//console.log("@@",addPolygon);
+						addPolygon.show = false;
+					else {
+						addPolygon.show = true;
+					}
+					break;
+				case 'edit10':
+					viewer.entities.remove(addEllipsoid); //直接移除实体
+					//viewer.entities.removeById("ellipsoid");//根据ID移除实体
+					break;
+				case 'edit11':
+					viewer.entities.removeAll();//移除集合中全部实体
+					break;
+				default:
+					break;
+			}
+		}
+
+		/* $('.btnAddClass').on("click", function (e) {
+			switch (e.target.id) {
+				case 'edit1':
+					addLine.polyline.material = new Cesium.PolylineDashMaterialProperty({
+						color: Cesium.Color.BLUE,
+					});
+					break;
+				case 'edit2':
+					addLine.polyline.material = new Cesium.PolylineArrowMaterialProperty(Cesium.Color.CYAN);
+					break;	
+				case 'edit3':
+					addPolygon.polygon.material = Cesium.Color.BLUE.withAlpha(0.6);
+					break;
+				case 'edit4':
+					var stripeMaterial = new Cesium.StripeMaterialProperty({
+						orientation: Cesium.StripeOrientation.VERTICAL,
+						evenColor: Cesium.Color.WHITE,
+						oddColor: Cesium.Color.BLACK,
+						repeat: 16,
+					});
+					addPolygon.polygon.material = stripeMaterial;
+					break;
+				case 'edit5':
+					addPolygon.polygon.outline = true;
+					addPolygon.polygon.outlineColor = Cesium.Color.YELLOW;
+					addPolygon.polygon.outlineWidth = 30;
+					break;
+				case 'edit6':
+					addPolygon.polygon.extrudedHeight = 100000;
+					break;
+				case 'edit7':
+					addPolygon.polygon.material = "./RasterImage/图片/懒羊羊.jpg";
+					break;
+				case 'edit8':
+					degree += 15;
+					addModel.orientation = Cesium.Transforms.headingPitchRollQuaternion(
+						Cesium.Cartesian3.fromDegrees(118, 30, 5000),
+						new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(degree), 0, 0))
+					break;
+				case 'edit9':
+					if (addPolygon.show != false)
+						//console.log("@@",addPolygon);
+						addPolygon.show = false;
+					else {
+						addPolygon.show = true;
+					}
+					break;
+				case 'edit10':
+					viewer.entities.remove(addEllipsoid); //直接移除实体
+					//viewer.entities.removeById("ellipsoid");//根据ID移除实体
+					break;
+				case 'edit11':
+					viewer.entities.removeAll();//移除集合中全部实体
+					break;
+				default:
+					break;
+			}
+		})
+ */
+	</script>
+</body>
+
+</html>

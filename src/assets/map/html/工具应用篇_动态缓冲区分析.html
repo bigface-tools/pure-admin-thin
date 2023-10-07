@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具应用篇_动态缓冲区分析</title>
+    <script src="./Build/CesiumUnminified/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/CesiumUnminified/Widgets/widgets.css">
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+
+
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+
+
+
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            terrainProvider: Cesium.createWorldTerrain(),
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+
+        });
+
+
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+
+        // 添加点函数，需要传入点坐标
+        function addPoint(point) {
+            viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(point[0], point[1]),
+                point: {
+                    pixelSize: 10,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    color: Cesium.Color.YELLOW,
+                    outlineWidth: 3,
+                    outlineColor: Cesium.Color.YELLOW.withAlpha(0.4),
+                },
+            });
+        }  
+
+        //格式转换  将点数据拆成一个大数组
+        function pointsToDegreesArray(points) {
+            let degreesArray = [];
+            points.map(item => {
+                degreesArray.push(item[0]);
+                degreesArray.push(item[1]);
+            });
+            return degreesArray;
+        }
+
+        // 初始化点缓冲
+        function initPointBuffer(radius) {
+            pointF = turf.point(point);
+            let buffered = turf.buffer(pointF, radius, { units: "meters" });
+
+            let coordinates = buffered.geometry.coordinates;
+            let points = coordinates[0];
+        
+            //因为turf.buffer计算得到的数组中元素是坐标点对  所以需要拆分组合为一个大数组
+            var degreesArray = pointsToDegreesArray(points);
+            return degreesArray;
+        }
+
+        //中心点
+        var point = [114.40086, 30.51888];
+        //定义缓冲区半径
+        var radius = 10;
+        //绘制缓冲区中心点
+        addPoint(point);
+        
+        //绘制缓冲区面
+        addBufferPolyogn();
+
+             
+
+
+
+        // 添加缓冲面
+        function addBufferPolyogn() {
+            viewer.entities.add({
+                polygon: {
+                    /* hierarchy: new Cesium.PolygonHierarchy(positions), */
+                    //缓冲区面的边界坐标使用CallbackProperty动态回调
+                    hierarchy : new Cesium.CallbackProperty(updataRadius, false),
+                    //材质
+                    material: Cesium.Color.RED.withAlpha(0.6),
+                    //贴地
+                    classificationType: Cesium.ClassificationType.BOTH,
+                },
+            });
+        }
+
+        
+        //CallbackProperty回调函数
+        function updataRadius(){
+            //当半径小于60
+            if(radius <60)
+            {
+                //半径每次+1
+                radius += 1;
+                //使用初始化点缓冲函数计算缓冲区边界点坐标  结果是数组
+                var pointArr = initPointBuffer(radius);
+                //将缓冲区边界点坐标转换成Cartesian3类型
+                var pointCar3 = Cesium.Cartesian3.fromDegreesArray(pointArr)
+                //将Cartesian3类型的缓冲区边界坐标转换成 polygon的hierarchy属性所要求的PolygonHierarchy类型
+                var points = new Cesium.PolygonHierarchy(pointCar3)
+                //计算结果返回  作为缓冲区面的边界坐标
+                return points;
+            }
+            else
+            {
+                radius = 10;
+                var pointArr = initPointBuffer(radius);
+                //将缓冲区边界点坐标转换成Cartesian3类型
+                var pointCar3 = Cesium.Cartesian3.fromDegreesArray(pointArr)
+                //将Cartesian3类型的缓冲区边界坐标转换成 polygon的hierarchy属性所要求的PolygonHierarchy类型
+                var points = new Cesium.PolygonHierarchy(pointCar3)
+                //计算结果返回  作为缓冲区面的边界坐标
+                return points;
+            }
+                
+        }
+
+        
+
+
+        //调整相机视角
+        viewer.scene.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(114.40086, 30.51888, 2000),
+            //destination: Cesium.Cartesian3.fromDegrees(-74.0012351579127, 40.715093849131, 1000),
+        });
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

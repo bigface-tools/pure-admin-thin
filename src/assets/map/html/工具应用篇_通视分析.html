@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具应用篇_通视分析</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cesiumContainer">
+  </div>
+
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      terrainProvider: Cesium.createWorldTerrain()
+    });
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;//开启深度检测
+    var tileset = viewer.scene.primitives.add(
+      new Cesium.Cesium3DTileset({
+        url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+      })
+    );
+    viewer.zoomTo(tileset);
+
+    //绘制点
+    function drawPoint (position) {
+      var pointGeometry = viewer.entities.add({
+        name: "点几何对象",
+        position: position,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        point: {
+          color: Cesium.Color.SKYBLUE,
+          pixelSize: 6,
+          outlineColor: Cesium.Color.YELLOW,
+          outlineWidth: 2,
+        }
+      });
+      return pointGeometry;
+    };
+
+    //绘制线
+    function drawLine (startPosition, endPosition, color) {
+      viewer.entities.add({
+        polyline: {
+          positions: [startPosition, endPosition],
+          width: 2,
+          material: color,
+          depthFailMaterial: color //用于指定折线低于地形时用于绘制折线的材料
+        }
+      });
+    }
+
+
+    function startAnaly (positions) {
+      //计算两点分量差异
+      var subtract = Cesium.Cartesian3.subtract(
+        positions[1],	//目标点
+        positions[0],	//观察点
+        new Cesium.Cartesian3()
+      )
+      //标准化计算射线方向
+      var direction = Cesium.Cartesian3.normalize(
+        subtract,
+        new Cesium.Cartesian3()
+      );
+      //创建射线
+      var ray = new Cesium.Ray(positions[0], direction);
+      //计算交点
+      var result = viewer.scene.pickFromRay(ray, []);	//返回第一个交点
+      //若有交点
+      if (result !== undefined && result !== null) {
+        drawLine(result.position, positions[0], Cesium.Color.GREEN); // 可视
+        drawLine(result.position, positions[1], Cesium.Color.RED); // 不可视
+      }
+      //没交点
+      else {
+        drawLine(positions[0], positions[1], Cesium.Color.GREEN);
+      }
+    }
+
+    //存储观察点和目标点
+    var positions = [];
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    //鼠标左键点击事件
+    handler.setInputAction(function (evt) {
+      var pickedObject = viewer.scene.pick(evt.position); //判断是否拾取到模型
+      //var pickedObject = viewer.scene.pickPosition(evt.position);//判断是否拾取到地形
+      if (viewer.scene.pickPositionSupported && Cesium.defined(pickedObject)) {
+        var cartesian = viewer.scene.pickPosition(evt.position);
+        if (Cesium.defined(cartesian)) {
+          console.log('cartesian', cartesian);
+          //保证每次只有一个观察点和一个目标点
+          if (positions.length < 2) {
+            drawPoint(cartesian);
+            positions.push(cartesian);
+          }
+          else {
+            alert("观察点和目标点是唯一的！");
+          }
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    //鼠标右键点击事件
+    handler.setInputAction(function (evt) {
+      startAnaly(positions);
+      positions = [];//每次绘制完线清空坐标点数组
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

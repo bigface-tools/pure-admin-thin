@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘制实体_交互绘制</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+    <!-- <script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script> -->
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            background-color: rgb(0, 0, 0, 0);
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <div id="menu" class="toolbar">
+        <select id="dropdown" onchange="draw()">
+            <option value="null">null</option>
+            <option value="drawPoint">绘制点</option>
+            <option value="drawLine">绘制线</option>
+            <option value="drawPolygon">绘制面</option>
+            <option value="drawCircle">绘制圆</option>
+            <option value="drawRectangle">绘制矩形</option>
+            <option value="drawModel">添加模型</option>
+            <option value="clear">清除</option>
+        </select>
+    </div>
+
+    <!-- <div class="addDiv">
+        <button id="drawPoint" class="btnAddClass">绘制点</button>
+        <button id="drawLine" class="btnAddClass">绘制线</button>
+        <button id="drawPolygon" class="btnAddClass">绘制面</button>
+        <button id="drawCircle" class="btnAddClass">绘制圆</button>
+        <button id="drawRectangle" class="btnAddClass">绘制矩形</button>
+        <button id="drawModel" class="btnAddClass">添加模型</button>
+    </div> -->
+
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            terrainProvider: Cesium.createWorldTerrain(),   //添加在线地形
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+        });
+        //开启地形检测
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        //加载三维模型
+        var tileset = viewer.scene.primitives.add(
+            new Cesium.Cesium3DTileset({
+                url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+            })
+        );
+        //定位过去
+        viewer.zoomTo(tileset);
+
+
+
+
+        //绘制实体
+        var activeShapePoints = []; //动态点数组
+        var activeShape;    //动态图形
+        var floatingPoint;  //第一个点 判断是否开始获取鼠标移动结束位置并添加至activeShapePoints
+        var drawingMode;    //绘制模式
+
+        //绘制点
+        function drawPoint(position) {
+            var pointGeometry = viewer.entities.add({
+                name: "点几何对象",
+                position: position,
+                point: {
+                    color: Cesium.Color.SKYBLUE,
+                    pixelSize: 6,
+                    outlineColor: Cesium.Color.YELLOW,
+                    outlineWidth: 2,
+                    //disableDepthTestDistance: Number.POSITIVE_INFINITY
+                }
+            });
+            return pointGeometry;
+        };
+        //添加模型
+        function addModel(position) {
+            var ceshi = viewer.entities.add({
+                name: '小车模型',
+                position: position,
+                model: {
+                    uri: './3D格式数据/glTF/CesiumMilkTruck.gltf',
+                    scale: 2    //放大倍数
+                }
+            })
+        }
+
+
+        //绘制图形
+        function drawShape(positionData) {
+            var shape;
+            if (drawingMode === 'line') {
+                shape = viewer.entities.add({
+                    polyline: {
+                        positions: positionData,
+                        width: 5.0,
+                        material: new Cesium.PolylineGlowMaterialProperty({
+                            color: Cesium.Color.GOLD,
+                        }),
+                        clampToGround: true
+                    }
+                });
+            }
+            else if (drawingMode === 'polygon') {
+                shape = viewer.entities.add({
+                    polygon: {
+                        hierarchy: positionData,
+                        material: new Cesium.ColorMaterialProperty(Cesium.Color.SKYBLUE.withAlpha(0.7))
+                    }
+                });
+            }
+            else if (drawingMode === 'circle') {
+                //当positionData为数组时绘制最终图，如果为function则绘制动态图
+                var value = typeof positionData.getValue === 'function' ? positionData.getValue(0) : positionData;
+                shape = viewer.entities.add({
+                    position: activeShapePoints[0],
+                    ellipse: {
+                        semiMinorAxis: new Cesium.CallbackProperty(function () {
+                            //半径 两点间距离
+                            var r = Math.sqrt(Math.pow(value[0].x - value[value.length - 1].x, 2) + Math
+                                .pow(value[0].y - value[value.length - 1].y, 2));
+                            return r ? r : r + 1;
+                        }, false),
+                        semiMajorAxis: new Cesium.CallbackProperty(function () {
+                            var r = Math.sqrt(Math.pow(value[0].x - value[value.length - 1].x, 2) + Math
+                                .pow(value[0].y - value[value.length - 1].y, 2));
+                            return r ? r : r + 1;
+                        }, false),
+                        material: Cesium.Color.BLUE.withAlpha(0.5),
+                        outline: true
+                    }
+                });
+            }
+            else if (drawingMode === 'rectangle') {
+                //当positionData为数组时绘制最终图，如果为function则绘制动态图
+                var arr = typeof positionData.getValue === 'function' ? positionData.getValue(0) : positionData;
+                shape = viewer.entities.add({
+                    rectangle: {
+                        coordinates: new Cesium.CallbackProperty(function () {
+                            var obj = Cesium.Rectangle.fromCartesianArray(arr);
+                            return obj;
+                        }, false),
+                        material: Cesium.Color.RED.withAlpha(0.5)
+                    }
+                });
+            }
+            return shape;
+        }
+
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        //鼠标左键
+        handler.setInputAction(function (event) {
+            // 用 `viewer.scene.pickPosition` 代替 `viewer.camera.pickEllipsoid`
+            // 当鼠标在地形上移动时可以得到正确的点.
+            var earthPosition = viewer.scene.pickPosition(event.position);
+
+            if (drawingMode == "point") {
+                drawPoint(earthPosition);   //绘制点
+            }
+            else if (drawingMode == "model") {
+                addModel(earthPosition);    //添加模型
+            }
+            // `如果鼠标不在地球上 则earthPosition是未定义
+            else if (drawingMode == "line" || drawingMode == "polygon" || drawingMode == "circle" || drawingMode == "rectangle") {
+                if (Cesium.defined(earthPosition)) {
+                    //第一次点击时，通过CallbackProperty绘制动态图
+                    if (activeShapePoints.length === 0) {
+                        floatingPoint = drawPoint(earthPosition);
+                        activeShapePoints.push(earthPosition);
+                        //动态点通过CallbackProperty实时更新渲染
+                        var dynamicPositions = new Cesium.CallbackProperty(function () {
+                            if (drawingMode === 'polygon') {
+                                //如果绘制模式是polygon 回调返回的值就要是PolygonHierarchy类型
+                                return new Cesium.PolygonHierarchy(activeShapePoints);
+                            }
+                            return activeShapePoints;
+                        }, false);
+                        activeShape = drawShape(dynamicPositions);//绘制动态图
+                    }
+                    //添加当前点进activeShapePoints，实时渲染动态图
+                    activeShapePoints.push(earthPosition);
+                    drawPoint(earthPosition);
+                }
+            }
+
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
+
+
+        //鼠标移动
+        handler.setInputAction(function (event) {
+            if (Cesium.defined(floatingPoint)) {
+                var newPosition = viewer.scene.pickPosition(event.endPosition);     //获取鼠标移动最终位置
+                if (Cesium.defined(newPosition)) {
+                    //动态去除数组中最后一个点，再添加最新一个点，保证只保留鼠标位置点
+                    activeShapePoints.pop();
+                    activeShapePoints.push(newPosition);
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+        // 删除动态绘制的图形 并绘制最终结果图
+        /* function terminateShape() {
+            activeShapePoints.pop();//去除最后一个动态点
+            if (activeShapePoints.length) {
+                drawShape(activeShapePoints);//绘制最终图
+            }
+            viewer.entities.remove(floatingPoint);//移除第一个点（重复了）
+            viewer.entities.remove(activeShape);//去除动态图形
+            floatingPoint = undefined;
+            activeShape = undefined;
+            activeShapePoints = [];
+        } */
+
+        //鼠标右键
+        handler.setInputAction(function (event) {
+            activeShapePoints.pop();//去除最后一个动态点
+            if (activeShapePoints.length) {
+                drawShape(activeShapePoints);//绘制最终图
+            }
+            viewer.entities.remove(floatingPoint);//移除第一个点（重复了）
+            viewer.entities.remove(activeShape);//去除动态图形
+            floatingPoint = undefined;
+            activeShape = undefined;
+            activeShapePoints = [];
+            //terminateShape();
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+
+        var dropdown = document.getElementById('dropdown');
+        function draw() {
+            switch (dropdown.value) {
+                case 'null':
+                    drawingMode = 'null';
+                    break;
+                case 'drawPoint':
+                    drawingMode = 'point';
+                    break;
+                case 'drawLine':
+                    drawingMode = 'line';
+                    break;
+                case 'drawPolygon':
+                    drawingMode = 'polygon';
+                    break;
+                case 'drawCircle':
+                    drawingMode = 'circle';
+                    break;
+                case 'drawRectangle':
+                    drawingMode = 'rectangle';
+                    break;
+                case 'drawModel':
+                    drawingMode = 'model';
+                    break;
+                case 'clear':
+                    viewer.entities.removeAll();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+
+    </script>
+</body>
+
+</html>

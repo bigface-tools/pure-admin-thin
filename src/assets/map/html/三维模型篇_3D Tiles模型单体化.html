@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>三维模型篇_3D Tiles模型单体化</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			geocoder: true,  //是否显示地名查找工具
+			homeButton: true,    //是否显示首页位置工具
+			sceneModePicker: true,   //是否显示视角模式切换工具
+			baseLayerPicker: false,   //是否显示默认图层选择工具
+			navigationHelpButton: true,  //是否显示导航帮助工具
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: true,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		viewer.scene.globe.depthTestAgainstTerrain = true;//开启深度监测
+		
+
+		var tileset = viewer.scene.primitives.add(
+			new Cesium.Cesium3DTileset({
+				url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+			})
+		);
+
+		viewer.zoomTo(tileset);
+
+		//加载分类瓦片
+		var classifytileset = new Cesium.Cesium3DTileset({
+			url: './RasterImage/单体化切片/tileset.json',
+			classificationType: Cesium.ClassificationType.CESIUM_3D_TILE
+		});
+		//设置分类瓦片透明度
+		classifytileset.style = new Cesium.Cesium3DTileStyle({
+			color: 'rgba(255, 255, 255,0.01)'
+		});
+		viewer.scene.primitives.add(classifytileset);
+
+
+		var highlighted = {
+			feature: undefined,
+			originalColor: new Cesium.Color(),
+		};
+		
+		//鼠标移动
+		let handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+		handler.setInputAction(function onMouseMove(movement) {
+			
+			if (Cesium.defined(highlighted.feature)) {
+				highlighted.feature.color = highlighted.originalColor;
+				highlighted.feature = undefined;
+			}
+
+			// 拾取新要素
+			var pickedFeature = viewer.scene.pick(movement.endPosition);
+			if (!Cesium.defined(pickedFeature)) {
+				return;
+			}
+
+			// 高亮显示
+			highlighted.feature = pickedFeature;
+			Cesium.Color.clone(pickedFeature.color, highlighted.originalColor);
+			pickedFeature.color = Cesium.Color.LIME.withAlpha(0.5);
+		}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+
+	</script>
+</body>
+
+</html>

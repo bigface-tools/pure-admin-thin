@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>绘制实体_Primitive管理</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+	<!-- <script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script> -->
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.toolbar {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgb(0, 0, 0, 0);
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+	<div id="menu" class="toolbar">
+		<select id="dropdown" onchange="edit()">
+			<option value="null">null</option>
+			<option value="edit1">合并添加几何</option>
+			<option value="edit2">拾取几何图形</option>
+			<option value="edit3">更改实例属性</option>
+			<option value="edit4">移除单个实体</option>
+			<option value="edit5">移除全部实体</option>
+		</select>
+	</div>
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+		});
+
+		viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(108, 42, 6000000),
+
+		})
+
+		//合并多个矩形
+		var instances = []; //存储几何实例
+		for (var lon = -180.0; lon < 180.0; lon += 5.0) {
+			for (var lat = -85.0; lat < 85.0; lat += 5.0) {
+				instances.push(new Cesium.GeometryInstance({
+					geometry: new Cesium.RectangleGeometry({
+						rectangle: Cesium.Rectangle.fromDegrees(lon, lat, lon + 5.0, lat + 5.0),
+						vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT
+					}),
+					id: lon + "-" + lat,
+					attributes: {
+						color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+							Cesium.Color.fromRandom(
+								{
+									alpha: 0.6
+								}
+							)
+						)
+					}
+				}));
+			}
+		}
+
+		//创建Primitive
+		var mergeInstances = new Cesium.Primitive({
+			geometryInstances: instances,
+			appearance: new Cesium.PerInstanceColorAppearance()
+		})
+
+
+
+		//绘制柱体
+		//将几何图形从模型坐标转换为世界坐标的模型矩阵
+		var cylinderModelMatrix = Cesium.Matrix4.multiplyByTranslation(
+			//转移矩阵
+			Cesium.Transforms.eastNorthUpToFixedFrame(
+				Cesium.Cartesian3.fromDegrees(100.0, 40.0)//本地参考中心点
+			),	
+			new Cesium.Cartesian3(0.0, 0.0, 200000.0),
+			new Cesium.Matrix4()
+		);
+		//定义几何形状
+		var cylinder = new Cesium.GeometryInstance({
+			geometry: new Cesium.CylinderGeometry({
+				length: 400000.0,//高度
+				topRadius: 200000.0,//顶面半径
+				bottomRadius: 200000.0,//底面半径
+				vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT
+			}),
+			modelMatrix: cylinderModelMatrix,
+			attributes: {
+				color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromRandom())
+			}
+		});
+		//定义外观
+		var cylinderAppearance = new Cesium.PerInstanceColorAppearance({
+				translucent: false,
+		})
+		//创建Primitive
+		var addCylinderGeometry = new Cesium.Primitive({
+			geometryInstances: cylinder,
+			appearance: cylinderAppearance
+		})
+
+		//viewer.scene.primitives.add(addCylinderGeometry);
+
+
+
+
+		var primitivesCollection = new Cesium.PrimitiveCollection();
+		primitivesCollection.destroyPrimitives = false;
+		viewer.scene.primitives.add(primitivesCollection);
+
+
+
+		var dropdown = document.getElementById('dropdown');
+		function edit(){
+			switch (dropdown.value){
+				case 'edit1':
+					primitivesCollection.add(mergeInstances);
+					break;
+				case 'edit2':
+					var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+					handler.setInputAction(function (movement) {
+						var pick = viewer.scene.pick(movement.position);
+						alert('点击实例id为：'+pick.id)
+					}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+					break;
+				case 'edit3':
+					var attributes = mergeInstances.getGeometryInstanceAttributes('105-40');
+					attributes.color = Cesium.ColorGeometryInstanceAttribute.toValue(Cesium.Color.fromRandom({
+						alpha: 1.0
+					}));
+					break;
+				case 'edit4':
+					viewer.scene.primitives.remove(addCylinderGeometry)
+					break;
+				case 'edit5':
+					primitivesCollection.removeAll()
+					break;
+
+				default:
+					break;
+			}
+		}
+
+	</script>
+</body>
+
+</html>

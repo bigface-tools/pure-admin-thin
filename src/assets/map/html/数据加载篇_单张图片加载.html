@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影像加载_单张图片底图加载</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var worldTerrain = Cesium.createWorldTerrain({
+            requestWaterMask: true,
+            requestVertexNormals: true
+        });
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            terrainProvider: worldTerrain,
+            baseLayerPicker:false, //图层选择控件
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+
+        });
+        //左下角坐标，右上角坐标
+		var rectangle=Cesium.Rectangle.fromDegrees(114.38004,30.51667,114.40471,30.53045);
+		viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+			url:"./RasterImage/图片/single.jpg",
+			rectangle: rectangle
+		}))
+		viewer.camera.setView({
+			destination: Cesium.Rectangle.fromDegrees(114.38304,30.51667,114.40471,30.52345)
+		});
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具应用篇_卷帘对比</title>
+
+  <script type="text/javascript" src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+</head>
+
+<body>
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #slider {
+      position: absolute;
+      left: 50%;
+      top: 0px;
+      background-color: #d3d3d3;
+      width: 5px;
+      height: 100%;
+      z-index: 9999;
+    }
+
+    #slider:hover {
+      cursor: ew-resize;
+    }
+  </style>
+
+  <div id="cesiumContainer">
+    <div id="slider"></div>
+  </div>
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+    });
+
+    /* var tileset = viewer.scene.primitives.add(
+      new Cesium.Cesium3DTileset({
+        url: './倾斜摄影/大雁塔3DTiles/tileset.json',//文件的路径
+      })
+    );
+    //定位过去
+    viewer.zoomTo(tileset);
+    //卷帘Cesium3DTileset  1.92版本发布
+    tileset.splitDirection = Cesium.SplitDirection.LEFT; */
+
+
+    var rightImageryVec = viewer.imageryLayers.addImageryProvider(
+      new Cesium.WebMapTileServiceImageryProvider({
+        //天地图矢量图层
+        url: "http://t{s}.tianditu.com/vec_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=vec&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=26322dcfabb058ef85aa3fa66f0f59f0",
+        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'], //服务负载子域
+        format: "image/jpeg",
+        tileMatrixSetID: "GoogleMapsCompatible",//使用谷歌的瓦片切片方式
+      })
+    );
+    var rightImageryCva = viewer.imageryLayers.addImageryProvider(
+      new Cesium.WebMapTileServiceImageryProvider({
+        //天地图矢量注记
+        url: "http://t{s}.tianditu.com/cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg&tk=26322dcfabb058ef85aa3fa66f0f59f0",
+        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+        format: "image/jpeg",
+        tileMatrixSetID: "GoogleMapsCompatible",
+      })
+    );
+
+
+    //设置在图像拆分前右侧显示该影像，在右侧显示
+    rightImageryVec.splitDirection = Cesium.ImagerySplitDirection.RIGHT;
+    rightImageryCva.splitDirection = Cesium.ImagerySplitDirection.RIGHT;
+    //获取或设置图像拆分器在视口中的初始位置。有效值在0.0到1.0之间。
+    viewer.scene.imagerySplitPosition = 0.5;
+
+
+
+    //卷帘DOM
+    var slider = document.getElementById("slider");
+    //卷帘激活状态 true为开启 false为关闭
+    var moveActive = false;
+    //移动卷帘
+    function move(movement) {
+      if (!moveActive) {
+        return;
+      }
+      //拿到鼠标在卷帘工具中移动结束的屏幕坐标
+      var relativeOffset = movement.endPosition.x;
+      //计算 图像拆分器在视口中新的位置
+      var splitPosition =
+        (slider.offsetLeft + relativeOffset) /
+        slider.parentElement.offsetWidth;
+      //卷帘移动，更新卷帘的位置
+      slider.style.left = `${100.0 * splitPosition}%`;
+      //更新设置 图像拆分器在视口中新的位置
+      viewer.scene.imagerySplitPosition = splitPosition;
+    }
+
+    //为卷帘工具实例化ScreenSpaceEventHandler对象
+    var handler = new Cesium.ScreenSpaceEventHandler(slider);
+    //左键按下开启卷帘
+    handler.setInputAction(function () {
+      moveActive = true;
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+    //左键弹起关闭卷帘
+    handler.setInputAction(function () {
+      moveActive = false;
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+    //鼠标移动更新图像拆分器的位置以及卷帘的位置
+    handler.setInputAction(move, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

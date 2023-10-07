@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>三维模型篇_3D Tiles模型缩放</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.adjust3DTilesDiv {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgba(0, 0, 0, 0.6);
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+	<div class="adjust3DTilesDiv">
+		<label style="color: white;">缩放倍数</label> <br />
+		<input type="range" min="0.01" max="10" step="0.01" oninput="changeScale()" id="Scale" value="1">
+		<input type="text" style="width:70px; " id="scaleValue" value="1" onchange="changeScale2()"> <br>
+	</div>
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			geocoder: true,  //是否显示地名查找工具
+			homeButton: true,    //是否显示首页位置工具
+			sceneModePicker: true,   //是否显示视角模式切换工具
+			baseLayerPicker: true,   //是否显示默认图层选择工具
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: true,  //是否显示全屏按钮工具
+
+		});
+
+		//加载三维模型
+		var tileset = viewer.scene.primitives.add(
+			new Cesium.Cesium3DTileset({
+				url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+			})
+		);
+		//定位过去
+		viewer.zoomTo(tileset);
+
+
+
+		var m;
+		var mStar;
+
+		tileset.readyPromise.then(function (argument) {
+			//得到外包围盒中心点坐标
+			var cartographic = Cesium.Cartographic.fromCartesian(tileset.boundingSphere.center);
+			//坐标变换为Cartesian3类型
+			var surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, cartographic.height);
+			//以提供的原点为中心计算4x4变换矩阵
+			m = Cesium.Transforms.eastNorthUpToFixedFrame(surface);
+			//记录模型初始转移矩阵，放大缩小以此为基础
+			mStar = tileset._root.transform	
+		});
+
+		//缩放滑动条
+		function changeScale() {
+			//缩放
+			var scale = Number(Scale.value);
+			scaleValue.value = scale;
+			if (scale) {
+				const _scale = Cesium.Matrix4.fromUniformScale(scale);
+				Cesium.Matrix4.multiply(mStar, _scale, m);
+				tileset._root.transform = m;
+			}
+			else{
+				return;
+			}
+		}
+
+		//缩放值文本框
+		function changeScale2() {
+			var scale = Number(scaleValue.value);
+			Scale.value = scale;
+			changeScale();
+		}
+
+	</script>
+</body>
+
+</html>

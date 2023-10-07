@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘制实体_Entity绘制贴地</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+	<!-- <script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script> -->
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .toolbar {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgb(0, 0, 0, 0);
+		}
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+	<div id="menu" class="toolbar">
+		<select id="dropdown" onchange="addEntity()">
+			<option value="null">null</option>
+			<option value="addPoint">添加点</option>
+			<option value="addLines">添加线</option>
+			<option value="addPolygon">添加面</option>
+			<option value="addRectangle">添加矩形</option>
+			<option value="addEllipse">添加椭圆</option>
+			<option value="addCorridor">添加走廊</option>
+			<option value="addModel">添加模型</option>
+		</select>
+
+		<select id="dropdown2" onchange="removeEntity()">
+			<option value="null">null</option>
+			<option value="removePoint">删除点</option>
+			<option value="removeLines">删除线</option>
+			<option value="removePolygon">删除面</option>
+			<option value="removeRectangle">删除矩形</option>
+			<option value="removeEllipse">删除椭圆</option>
+			<option value="removeCorridor">删除走廊</option>
+			<option value="removeModel">删除模型</option>
+		</select>
+	</div>
+
+   <!--  <div class="addDiv">
+        <button id="addPoint" class="btnAddClass">添加点</button>
+        <button id="addLines" class="btnAddClass">添加线</button>
+        <button id="addPolygon" class="btnAddClass">添加面</button>
+		<button id="addRectangle" class="btnAddClass">添加矩形</button>
+        <button id="addEllipse" class="btnAddClass">添加椭圆</button>
+		<button id="addCorridor" class="btnAddClass">添加走廊</button>
+		<button id="addModel" class="btnAddClass">添加模型</button>	
+    </div>
+    <div class="removeDiv">
+        <button id="removePoint" class="btnRemoveClass">删除点</button>
+        <button id="removeLines" class="btnRemoveClass">删除线</button>
+        <button id="removePolygon" class="btnRemoveClass">删除面</button>
+		<button id="removeRectangle" class="btnRemoveClass">删除矩形</button>
+        <button id="removeEllipse" class="btnRemoveClass">删除椭圆</button>
+		<button id="removeCorridor" class="btnRemoveClass">删除走廊</button>
+		<button id="removeModel" class="btnRemoveClass">删除模型</button>
+    </div> -->
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var terrainModels = Cesium.createWorldTerrain();
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			terrainProvider: terrainModels,
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+        });
+		//viewer.scene.globe.depthTestAgainstTerrain = false;
+		viewer.camera.flyTo({
+		  destination:  Cesium.Cartesian3.fromDegrees(118, 32, 6000000),
+		  orientation: {
+			heading: 0.010152402293521767,
+			pitch: -1.5705337480193866,
+			roll: 0.00003681052934645379
+		  },
+		})
+
+
+		// 点
+		var addPoint = {
+			id:'point',
+			name:'点',
+			show: true,  //显示.
+		    position: Cesium.Cartesian3.fromDegrees(118, 32),
+		    point: {
+		        color: Cesium.Color.BLUE, //颜色
+		        pixelSize: 50,//点大小
+				disableDepthTestDistance:Number.POSITIVE_INFINITY,
+				heightReference:Cesium.HeightReference.CLAMP_TO_GROUND   //贴地
+		    }
+		}
+
+		// 线
+		var addLine = {
+			id: 'line',
+			name:'线',
+		    show: true,  //显示
+		    polyline: {
+		        positions: Cesium.Cartesian3.fromDegreesArray([118, 30, 119, 32, 116,35]),
+		        width: 2, //线条粗细
+		        material: Cesium.Color.RED,  //线条材质
+		        clampToGround: true	//贴地
+		    }
+		}
+
+		//面
+		var addPolygon = {
+			id:'polygon',
+			name: '面',
+			show:true,
+		    polygon: {
+		         hierarchy: Cesium.Cartesian3.fromDegreesArray([118, 30, 119, 32,116,32,116,30]),
+		         //outline: false,
+		         material: Cesium.Color.RED.withAlpha(0.4),
+				 classificationType:Cesium.ClassificationType.BOTH , //贴地
+		    }
+		}
+
+		//矩形
+		var addRectangle = {
+			id:'rectangle',
+			name: '矩形',
+			show:true,
+		    rectangle: {
+		        coordinates: Cesium.Rectangle.fromDegrees(80.0, 30.0, 100.0, 35.0),
+		        material: Cesium.Color.BLUE.withAlpha(0.5),
+				classificationType:Cesium.ClassificationType.BOTH , //贴地
+				/* height:0,
+		        outline: true,
+				outlineWidth:10,
+		        outlineColor: Cesium.Color.BLUE */
+		    }
+		}
+
+		//椭圆
+		var addEllipse = {
+			id:'ellipse',
+			name: '椭圆',
+			show:true,
+			position: Cesium.Cartesian3.fromDegrees(103.0, 40.0),
+		    ellipse: {
+		        semiMinorAxis: 250000.0, //短半轴
+		        semiMajorAxis: 400000.0, //长半轴
+		        material: Cesium.Color.CYAN.withAlpha(0.5),
+				classificationType:Cesium.ClassificationType.BOTH , //贴地
+				/* height:0,
+		        outline: true,
+		        outlineColor: Cesium.Color.RED */
+		    }
+		}
+
+	
+
+		//走廊
+		var addCorridor = {
+			id:'corridor',
+			name: '走廊',
+			show:true,
+		    corridor: {
+		        positions: Cesium.Cartesian3.fromDegreesArray([
+					100.0, 40.0,
+					105.0, 40.0,
+					105.0, 35.0
+		        ]),
+		        width: 200000.0,
+		        material: Cesium.Color.YELLOW.withAlpha(0.5),
+				classificationType:Cesium.ClassificationType.BOTH , //贴地
+				/* height:0,
+		        outline: true,	//外轮廓线
+		        outlineColor: Cesium.Color.RED */
+		    }
+		}
+
+		
+			
+		// 模型
+		var heading = Cesium.Math.toRadians(60); //60度航向
+		var pitch = 0;	//俯仰角
+		var roll = 0;	//翻滚角
+		var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+		var addModel = {
+			id: 'model', //id唯一
+		    name: '小车模型', // 名称
+		    show: true,  //显示
+		    position: Cesium.Cartesian3.fromDegrees(118, 32),  // 模型位置
+		    orientation: Cesium.Transforms.headingPitchRollQuaternion(Cesium.Cartesian3.fromDegrees(118, 30), hpr), //飞机航向
+		    model: {
+		        uri: './3D格式数据/glTF/CesiumMilkTruck.gltf',
+		        minimumPixelSize: 30, //模型最小
+		        maximumScale: 50000,  //模型最大
+		        //color: Cesium.Color.ORANGE, // 模型颜色
+		        scale: 20000, //当前比例
+				heightReference: Cesium.HeightReference.CLAMP_TO_GROUND	//贴地
+		    }
+		}
+
+		
+		var dropdown = document.getElementById('dropdown');
+		var dropdown2 = document.getElementById('dropdown2');
+		function addEntity(){
+			switch (dropdown.value){
+				case 'addPoint':
+					viewer.entities.add(addPoint);
+					break;
+				case 'addLines':
+					viewer.entities.add(addLine);
+					break;
+				case 'addPolygon':
+					viewer.entities.add(addPolygon);
+					break;
+				case 'addRectangle':
+					viewer.entities.add(addRectangle);
+					break;
+				case 'addEllipse':
+					viewer.entities.add(addEllipse);
+					break;
+				case 'addCorridor':
+					viewer.entities.add(addCorridor);
+					break;
+				case 'addModel':
+					viewer.entities.add(addModel);
+					break;
+				default:
+					break;
+			}
+		}
+
+		function removeEntity(){
+			switch (dropdown2.value){
+				case 'removePoint':
+					viewer.entities.removeById ("point");
+					break;
+				case 'removeLines':
+					viewer.entities.removeById ("line");
+					break;
+				case 'removePolygon':
+					viewer.entities.removeById("polygon");
+					break;
+				case 'removeRectangle':
+					viewer.entities.removeById("rectangle");
+					break;
+				case 'removeEllipse':
+					viewer.entities.removeById("ellipse");
+					break;
+				case 'removeCorridor':
+					viewer.entities.removeById ("corridor");
+					break;
+				case 'removeModel':
+					viewer.entities.removeById("model");
+					break;
+				default:
+					break;
+			}
+		}
+		
+				
+		/* $('.btnRemoveClass').on("click",function(e){
+			switch (e.target.id){
+				case 'removePoint':
+					viewer.entities.removeById ("point");
+					break;
+				case 'removeLines':
+					viewer.entities.removeById ("line");
+					break;
+				case 'removePolygon':
+					viewer.entities.removeById("polygon");
+					break;
+				case 'removeRectangle':
+					viewer.entities.removeById("rectangle");
+					break;
+				case 'removeEllipse':
+					viewer.entities.removeById("ellipse");
+					break;
+				case 'removeCylinder':
+					viewer.entities.removeById("cylinder");
+					break;
+				case 'removeCorridor':
+					viewer.entities.removeById ("corridor");
+					break;
+				case 'removeWall':
+					viewer.entities.removeById ("wall");
+					break;
+				case 'removeBox':
+					viewer.entities.removeById("box");
+					break;
+				case 'removeEllipsoid':
+					viewer.entities.removeById("ellipsoid");
+					break;
+				case 'removeModel':
+					viewer.entities.removeById("model");
+					break;
+				case 'removeBillboard':
+					viewer.entities.removeById("billboard");
+					break;
+				default:
+					break;
+			}
+		})
+		
+		$('.btnAddClass').on("click",function(e){
+			switch (e.target.id){
+				case 'addPoint':
+					viewer.entities.add(addPoint);
+					break;
+				case 'addLines':
+					viewer.entities.add(addLine);
+					break;
+				case 'addPolygon':
+					viewer.entities.add(addPolygon);
+					break;
+				case 'addRectangle':
+					viewer.entities.add(addRectangle);
+					break;
+				case 'addEllipse':
+					viewer.entities.add(addEllipse);
+					break;
+				case 'addCylinder':
+					viewer.entities.add(addCylinder);
+					break;
+				case 'addCorridor':
+					viewer.entities.add(addCorridor);
+					break;
+				case 'addWall':
+					viewer.entities.add(addWall);
+					break;
+				case 'addBox':
+					viewer.entities.add(addBox);
+					break;
+				case 'addEllipsoid':
+					viewer.entities.add(addEllipsoid);
+					break;
+				case 'addModel':
+					viewer.entities.add(addModel);
+					
+					break;
+				case 'addBillboard':
+					viewer.entities.add(addBillboard);
+					break;
+				default:
+					break;
+			}
+		})
+ */
+
+    </script>
+</body>
+
+</html>

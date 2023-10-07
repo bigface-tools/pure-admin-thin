@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具应用篇_场景截图</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .tool {
+      top: 20px;
+      left: 40px;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cesiumContainer">
+  </div>
+  <div class="tool">
+    <button onclick="printScreenScene()">打印场景</button>
+  </div>
+
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+    });
+
+    var tileset = viewer.scene.primitives.add(
+      new Cesium.Cesium3DTileset({
+        url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+      })
+    );
+    viewer.zoomTo(tileset);
+
+
+    //打印图件
+    function savePng(data, pngName) {
+    	var saveLink = document.createElement('a');//创建下载链接标签<a>
+    	saveLink.href = data;	//设置下载链接
+    	saveLink.download = pngName;	//设置下载图片名称
+    	document.body.appendChild(saveLink); //将 <a>标签 添加到 <body> 中
+    	saveLink.click(); 	//点击<a>标签
+    };
+
+
+    function printScreenScene() {
+    	var image = new Image();//创建img对象
+    	viewer.render();//重新渲染界面
+    	image = viewer.scene.canvas.toDataURL("image/png");//获取下载链接
+    	savePng(image, '当前场景');//调用打印图件函数
+    }
+
+    
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

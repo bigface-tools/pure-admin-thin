@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_指南针与比例尺</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+	<!-- 指南针、比例尺等 -->
+	<script src="./Build/js/viewerCesiumNavigationMixin.min.js"></script>
+
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		/*比例尺定位*/
+		.distance-legend {
+			position: absolute;
+			left: 0px;
+			bottom: 30px;
+			z-index: 10;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+		});
+		/* var options = {};
+		// 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和Cesium.Rectangle.
+		options.defaultResetView = Cesium.Cartographic.fromDegrees(110, 30, 2000000);
+		// 用于启用或禁用罗盘。true是启用罗盘，false是禁用罗盘。默认值为true。如果将选项设置为false，则罗盘将不会添加到地图中。
+		options.enableCompass = true;
+		// 用于启用或禁用缩放控件。true是启用，false是禁用。默认值为true。如果将选项设置为false，则缩放控件 将不会添加到地图中。
+		options.enableZoomControls = true;
+		// 用于启用或禁用距离图例。true是启用，false是禁用。默认值为true。如果将选项设置为false，距离图例将不会添加到地图中。
+		options.enableDistanceLegend = true;
+		// 用于启用或禁用指南针外环。true是启用，false是禁用。默认值为true。如果将选项设置为false，则该环将可见但无效。
+		options.enableCompassOuterRing = true; */
+
+
+		//添加指南针、罗盘、比例尺等
+		viewer.extend(Cesium.viewerCesiumNavigationMixin, {
+			// 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和Cesium.Rectangle.
+			defaultResetView: Cesium.Cartographic.fromDegrees(110, 30, 2000000),
+			// 用于启用或禁用罗盘。true是启用罗盘，false是禁用罗盘。默认值为true。如果将选项设置为false，则罗盘将不会添加到地图中。
+			enableCompass : true,
+			// 用于启用或禁用缩放控件。true是启用，false是禁用。默认值为true。如果将选项设置为false，则缩放控件 将不会添加到地图中。
+			enableZoomControls : true,
+			// 用于启用或禁用距离图例。true是启用，false是禁用。默认值为true。如果将选项设置为false，距离图例将不会添加到地图中。
+			enableDistanceLegend : true,
+			// 用于启用或禁用指南针外环。true是启用，false是禁用。默认值为true。如果将选项设置为false，则该环将可见但无效。
+			enableCompassOuterRing : true,
+		});
+
+
+
+
+
+
+
+
+	</script>
+</body>
+
+</html>

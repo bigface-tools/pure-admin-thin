@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具应用篇_地形开挖</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id="cesiumContainer"></div>
+
+  <script>
+
+
+    //#region 初始化
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var terrainModels = Cesium.createWorldTerrain();
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      terrainProvider: terrainModels,
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+    });
+    //#endregion
+
+    //开启深度检测
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+    //调整相机视角
+    viewer.scene.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(114.39564, 30.52214, 2000),
+    });
+
+
+    var points = [];  //填挖点
+    var controls = [];  //插值控制点
+    var hierarchy = []; //绘制面的坐标点
+    //实例化ScreenSpaceEventHandler对象
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+
+    //封装挖地形函数
+    function DrawClippingPlane(points) {
+      var pointsLength = points.length;
+      var clippingPlanes = []; // 存储ClippingPlane集合
+
+      //计算裁剪面
+      for (var i = 0; i < pointsLength; ++i) {
+        var nextIndex = (i + 1) % pointsLength;
+
+        //计算两个笛卡尔的按分量求和
+        var midpoint = Cesium.Cartesian3.add(points[i], points[nextIndex], new Cesium.Cartesian3());
+        //缩放笛卡尔坐标
+        midpoint = Cesium.Cartesian3.multiplyByScalar(midpoint, 0.5, midpoint);
+        //计算提供的笛卡尔坐标系的标准化形式
+        var up = Cesium.Cartesian3.normalize(midpoint, new Cesium.Cartesian3());
+
+        //计算两个笛卡尔的分量差异
+        var right = Cesium.Cartesian3.subtract(points[nextIndex], midpoint, new Cesium.Cartesian3());
+        //计算提供的笛卡尔坐标系的标准化形式
+        right = Cesium.Cartesian3.normalize(right, right);
+
+        //计算两个笛卡尔的叉（外）乘积
+        var normal = Cesium.Cartesian3.cross(right, up, new Cesium.Cartesian3());
+        //计算提供的笛卡尔坐标系的标准化形式
+        normal = Cesium.Cartesian3.normalize(normal, normal);
+
+        //原始中心平面
+        var originCenteredPlane = new Cesium.Plane(normal, 0.0);
+        //计算点到平面的有符号最短距离
+        var distance = Cesium.Plane.getPointDistance(originCenteredPlane, midpoint);
+
+        clippingPlanes.push(new Cesium.ClippingPlane(normal, distance));
+      }
+
+      //创建ClippingPlaneCollection对象
+      var ClippingPlaneCollectionObj = new Cesium.ClippingPlaneCollection({
+        planes: clippingPlanes,
+        edgeWidth: 1.0,
+        edgeColor: Cesium.Color.YELLOW
+      });
+
+      //赋值给globe的clippingPlanes
+      viewer.scene.globe.clippingPlanes = ClippingPlaneCollectionObj;
+      console.log("创建完毕！");
+    }
+
+    //封装绘制面、贴纹理函数
+    function addPolygon(hierarchy) {
+      viewer.entities.add({
+        polygon: {
+          hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(hierarchy),
+          material: new Cesium.ImageMaterialProperty({
+            image: "./RasterImage/图片/挖地贴图.png"
+          }),
+          closeTop: false, // 这个要设置为false
+          extrudedHeight: 0,
+          perPositionHeight: true, // 这个要设置true
+        }
+      });
+    }
+
+    //获取指定位置高度
+    function getHeight(position) {
+      height = viewer.scene.globe.getHeight(position);
+      return height;
+    }
+
+    //样条插值
+    function interpolation(point1, point2) {
+      var spline = new Cesium.LinearSpline({
+        times: [0.0, 1],
+        points: [point1, point2]
+      });
+
+      for (var i = 0; i <= 100; i++) {
+        var cartesian3 = spline.evaluate(i / 100);
+
+        var cartographic = Cesium.Cartographic.fromCartesian(cartesian3);
+
+        var lat = Cesium.Math.toDegrees(cartographic.latitude);
+        var lng = Cesium.Math.toDegrees(cartographic.longitude);
+        var height = getHeight(cartographic);
+
+        hierarchy.push(lng);
+        hierarchy.push(lat);
+        hierarchy.push(height);
+      }
+    }
+
+    //鼠标左键点击选点
+    handler.setInputAction(function (event) {
+      var earthPosition = viewer.scene.pickPosition(event.position);
+      var cartographic = Cesium.Cartographic.fromCartesian(earthPosition);
+
+
+      var lat = Cesium.Math.toDegrees(cartographic.latitude);
+      var lng = Cesium.Math.toDegrees(cartographic.longitude);
+      //var height = cartographic.height;
+
+      controls.push(Cesium.Cartesian3.fromDegrees(lng, lat));//添加控制点
+      points.push(Cesium.Cartesian3.fromDegrees(lng, lat));//添加填挖点
+
+      //当控制点大于等于两个的时候进行插值，每次插值最新添加的两个点
+      if (controls.length > 1) {
+        interpolation(controls[controls.length - 2], controls[controls.length - 1])
+      }
+
+
+      /*  hierarchy.push(lng);
+       hierarchy.push(lat);
+       hierarchy.push(height); */
+
+
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    //点击右键挖地形、绘制面以及贴纹理
+    handler.setInputAction(function (event) {
+      console.log('选择完毕！');
+
+      //全部选择完后对控制点最后一个点和第一个点直接进行插值
+      interpolation(controls[controls.length - 1], controls[0])
+
+      //移除贴图时添加的polygon
+      viewer.entities.removeAll();
+
+      //挖地形
+      DrawClippingPlane(points);
+
+      //绘制面、贴纹理
+      addPolygon(hierarchy);
+
+      //将数组清空
+      points = [];
+      hierarchy = [];
+      controls = [];
+
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+
+
+
+    /* handler.setInputAction(function (event) {
+      var earthPosition = viewer.scene.pickPosition(event.position);
+      var cartographic = Cesium.Cartographic.fromCartesian(earthPosition);
+
+
+      var lat = Cesium.Math.toDegrees(cartographic.latitude);
+      var lng = Cesium.Math.toDegrees(cartographic.longitude);
+      var height = cartographic.height;
+
+      controls.push(Cesium.Cartesian3.fromDegrees(lng, lat));//添加控制点
+
+      if (controls.length > 1) {
+        interpolation(controls[controls.length - 1], controls[controls.length - 2])
+      }
+
+
+
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
+    function interpolation(point1, point2) {
+      var spline = new Cesium.LinearSpline({
+        times: [0.0, 1],
+        points: [point1, point2],
+      });
+
+      var positions = [];
+      for (var i = 0; i <= 50; i++) {
+        var cartesian3 = spline.evaluate(i / 50);
+        positions.push(cartesian3);
+        viewer.entities.add({
+          position: cartesian3,
+          point: {
+            color: Cesium.Color.YELLOW,
+            pixelSize: 6,
+            heightReference:Cesium.HeightReference.CLAMP_TO_GROUND
+          },
+        });
+      }
+      viewer.entities.add({
+        name: "LinearSpline",
+        polyline: {
+          positions: positions,
+          width: 3,
+          material: Cesium.Color.GREEN,
+        },
+      });
+    } */
+
+    /* var controls = []
+    controls.push(Cesium.Cartesian3.fromDegrees(120.11551237582385, 35.97934910503657))
+    controls.push(Cesium.Cartesian3.fromDegrees(121.1367529, 35.9629172))
+    controls.push(Cesium.Cartesian3.fromDegrees(122.1367529, 36.9629172))
+    controls.push(Cesium.Cartesian3.fromDegrees(123.8632471, 36.9629172))
+    controls.push(Cesium.Cartesian3.fromDegrees(124.1367529, 35.9629172))
+
+    for (var i = 0; i < controls.length; i++) {
+      viewer.entities.add({
+        position: controls[i],
+        point: {
+          color: Cesium.Color.RED,
+          pixelSize: 10,
+        },
+      });
+    }
+    viewer.zoomTo(viewer.entities);
+
+
+    var spline = new Cesium.LinearSpline({
+      times: [0.0, 0.25, 0.5, 0.75, 1],
+      points: controls,
+    });
+
+    var positions = [];
+    for (var i = 0; i <= 50; i++) {
+      var cartesian3 = spline.evaluate(i / 50);
+      positions.push(cartesian3);
+      viewer.entities.add({
+        position: cartesian3,
+        point: {
+          color: Cesium.Color.YELLOW,
+          pixelSize: 6,
+        },
+      });
+    }
+    viewer.entities.add({
+      name: "LinearSpline",
+      polyline: {
+        positions: positions,
+        width: 3,
+        material: Cesium.Color.GREEN,
+      },
+    }); */
+
+
+
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

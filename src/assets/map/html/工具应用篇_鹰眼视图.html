@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_鹰眼视图</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+		#eagleEye {
+			position: absolute;
+			width: 25%;
+			height: 30%;
+			bottom: 0;
+			right: 0;
+			z-index: 999;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer"></div>
+	<!-- 鹰眼 -->
+	<div id="eagleEye"></div>
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		var viewerEye = new Cesium.Viewer("eagleEye", {
+			geocoder: false,  //是否显示地名查找工具
+			homeButton: false,    //是否显示首页位置工具
+			sceneModePicker: false,   //是否显示视角模式切换工具
+			baseLayerPicker: false,   //是否显示默认图层选择工具
+			navigationHelpButton: false,  //是否显示导航帮助工具
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain(),
+			//加载天地图矢量图
+			imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+				url: "http://t{s}.tianditu.com/vec_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=vec&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=26322dcfabb058ef85aa3fa66f0f59f0",
+				subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'], //服务负载子域
+				layer: "tdtImgLayer",
+				style: "default",
+				format: "image/jpeg",
+				tileMatrixSetID: "GoogleMapsCompatible",//使用谷歌的瓦片切片方式
+				show: true
+			})
+		});
+		viewerEye.imageryLayers.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({   
+            //天地矢量注记
+            url: "http://t{s}.tianditu.com/cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg&tk=26322dcfabb058ef85aa3fa66f0f59f0",
+            subdomains: ['0','1','2','3','4','5','6','7'],
+            layer: "tdtCiaLayer",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "GoogleMapsCompatible",
+            show: true
+        }));
+
+		viewerEye._cesiumWidget._creditContainer.style.display = 'none';//去除cesium版权信息
+
+		//禁用鹰眼视图相机操作
+		// 旋转
+		viewerEye.scene.screenSpaceCameraController.enableRotate = false;
+		// 平移
+		viewerEye.scene.screenSpaceCameraController.enableTranslate = false;
+		// 放大
+		viewerEye.scene.screenSpaceCameraController.enableZoom = false;
+		// 倾斜
+		viewerEye.scene.screenSpaceCameraController.enableTilt = false;
+		// 看向
+		viewerEye.scene.screenSpaceCameraController.enableLook = false;
+
+		//控制鹰眼视图相机视角
+		function reViewer() {
+			viewerEye.camera.flyTo({
+				destination: viewer.camera.position,
+				orientation: {
+					heading: viewer.camera.heading,
+					pitch: viewer.camera.pitch,
+					roll: viewer.camera.roll
+				},
+				duration: 0.0
+			});
+		}
+
+		//设置主视图引起监听事件触发的相机变化幅度，越小越灵敏
+		viewer.camera.percentageChanged = 0.01;
+		//当主视图相机变化时，鹰眼视图跟着变化
+		viewer.camera.changed.addEventListener(reViewer);
+
+
+	</script>
+</body>
+
+</html>

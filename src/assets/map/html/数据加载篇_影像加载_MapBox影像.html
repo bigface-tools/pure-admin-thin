@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影像加载_MapBox影像</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            baseLayerPicker: false, //图层选择控件
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+            //加载MapBox影像
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: "https://a.tiles.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiemhhbmdoYWl4dWUiLCJhIjoiY2t4eWR0Y2F4MThqZjJ4cnNuenRkMXpmeiJ9.zLvz8kfpNPErzcNBbj0dUA",
+            })
+        });
+
+
+    </script>
+</body>
+
+</html>

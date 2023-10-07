@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据加载_CZML数据加载</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            timeline: false,
+            animation: false,
+            vrButton: false,
+            sceneModePicker: false,
+            infoBox: true,
+            scene3DOnly: false,
+        });
+
+        var czml = [
+            {
+                id: "document",
+                name: "CZML Model",
+                version: "1.0",
+            },
+            {
+                id: "aircraft model",
+                name: "Cesium Air",
+                position: {
+                    cartographicDegrees: [114.39278, 30.52357, 10.0],   //数据加载位置
+                },
+                model: {
+                    gltf: "./3D格式数据/glb/Cesium_Air.glb",   //模型路径URL
+                    scale: 2.0,  //缩放比例
+                },
+            },
+        ];
+        var dataSourcePromise = viewer.dataSources.add(
+            Cesium.CzmlDataSource.load(czml)
+        );
+        dataSourcePromise.then(function (dataSource) {
+            entity = dataSource.entities.getById("aircraft model");
+        })
+        //定位过去
+        viewer.zoomTo(entity);
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,290 @@
+
+  <!DOCTYPE html>
+  <html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>工具应用篇_填挖方分析</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+      html,
+      body,
+      #cesiumContainer {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #000000;
+      }
+
+      .toolbar {
+        position: absolute;
+        width: 260px;
+        height: 120px;
+        top: 10px;
+        left: 20px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        font-size: 16px;
+      }
+    </style>
+
+  </head>
+
+  <body>
+    <div id="cesiumContainer">
+    </div>
+    <div class="toolbar">
+      <label>填挖方计算</label> <br />
+      <label>挖方：</label>
+      <label id="excavation"></label> <br />
+      <label>填埋：</label>
+      <label id="bury"></label> <br />
+      <label>开挖高度</label> 
+      <input type="text" style="width:70px; " id="excavateHeight" value="30"><br />
+      <label>填埋高度</label>
+      <input type="text" style="width:70px; " id="buryHeight" value="40">
+    </div>
+    <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var terrainProvider = Cesium.createWorldTerrain();
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      terrainProvider: terrainProvider,
+    });
+    
+    //开启深度检测
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+    
+    
+    /* var excavateHeight = 30; // 开挖高度
+    var buryHeight = 40; // 填埋高度 */
+    
+    //填挖方量计算
+    function calculation(lon_star, lon_stop, lat_star, lat_stop) {   
+      /* 计算 开挖/填埋 的 开挖量/填方量 的 核心思想就是微积分 */
+      // 设置剖分最小步长0.0001
+      var mimStepSize = 0.0001;
+    
+      // 存储所有的剖分矩形
+      var subRectangles = [];
+      // 将整个区域剖分成多个小区域
+      for (var i = lon_star; i <= lon_stop; i = i + mimStepSize) {
+        for (var j = lat_star; j <= lat_stop; j = j + mimStepSize) {
+          var subRectangle = new Cesium.Rectangle(
+            Cesium.Math.toRadians(i),
+            Cesium.Math.toRadians(j),
+            Cesium.Math.toRadians(i + mimStepSize),
+            Cesium.Math.toRadians(j + mimStepSize)
+          );
+          subRectangles.push(subRectangle);
+        }
+      }
+    
+      // 计算每个矩形的中心点作为计算该矩形高度的位置
+      var subRectanglesCenterPoints = [];
+      subRectangles.forEach(subRectangle => {
+        var centerPoint = Cesium.Cartographic.fromRadians((subRectangle.west + subRectangle.east) / 2, (subRectangle
+          .north +
+          subRectangle.south) / 2);
+        subRectanglesCenterPoints.push(centerPoint);
+      });
+    
+      // 计算每个中心点的地形高度
+      var promise = Cesium.sampleTerrainMostDetailed(terrainProvider, subRectanglesCenterPoints);
+      Cesium.when(promise, function (updatedPositions) {
+        // 所有高度
+        var heights = [];
+        updatedPositions.forEach(point => {
+          heights.push(point.height);
+        });
+     
+        // 开始计算土方
+        var excavateVolumes = 0; // 挖方
+        var buryVolumes = 0; // 填埋
+
+        //填挖方基准高度
+        var excavateHeight = document.getElementById("excavateHeight").value;
+        var buryHeight = document.getElementById("buryHeight").value;
+
+        // 1.计算每个矩形的长、宽
+        for (var i = 0; i < subRectangles.length; i++) {
+          var subRectangle = subRectangles[i];
+          var leftBottom = Cesium.Cartesian3.fromRadians(subRectangle.west, subRectangle.south);
+          var leftTop = Cesium.Cartesian3.fromRadians(subRectangle.west, subRectangle.north);
+          var rightBottom = Cesium.Cartesian3.fromRadians(subRectangle.east, subRectangle.south);
+          var height = Cesium.Cartesian3.distance(leftBottom, leftTop); // 宽
+          var width = Cesium.Cartesian3.distance(leftBottom, rightBottom); // 长
+    
+          // 挖方
+          if (heights[i] > excavateHeight) { // 如果地形高度大于开挖高度才需要开挖
+            var excavateVolume = width * height * (heights[i] - excavateHeight);
+            excavateVolumes += excavateVolume;
+          }
+    
+          // 填埋
+          if (heights[i] < buryHeight) { // 如果地形高度小于填埋高度才需要填埋
+            var buryVolume = width * height * (buryHeight - heights[i]);
+            buryVolumes += buryVolume;
+          }
+        }
+        
+        //显示结果
+        document.getElementById('excavation').innerHTML = excavateVolumes.toFixed(4) + "立方米(m³)";
+        document.getElementById('bury').innerHTML = buryVolumes.toFixed(4) + "立方米(m³)";
+      });
+    }
+
+    //绘制填挖体
+    function drawResult(minHeight, maxHeight, minLon, maxLon, minLat, maxLat) {
+      var entity = viewer.entities.add({
+        name: '填挖体',
+        show: true,
+        rectangle: {
+          coordinates: Cesium.Rectangle.fromDegrees(
+            minLon, minLat,
+            maxLon, maxLat
+          ),
+          material: Cesium.Color.BLUE.withAlpha(0.5),
+          height: minHeight,
+          extrudedHeight: maxHeight,
+        }
+      })
+    }
+    
+    
+    
+    //绘制实体
+    var points = []; //存储填挖方区域顶点
+    var activeShapePoints = []; //动态点数组
+    var activeShape;    //动态图形
+    var floatingPoint;  //第一个点 判断是否开始获取鼠标移动结束位置并添加至activeShapePoints
+    
+    //绘制点
+    function drawPoint(position) {
+      var pointGeometry = viewer.entities.add({
+        name: "点几何对象",
+        position: position,
+        point: {
+          color: Cesium.Color.SKYBLUE,
+          pixelSize: 6,
+          outlineColor: Cesium.Color.YELLOW,
+          outlineWidth: 2,
+          //disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+      return pointGeometry;
+    };
+      
+    //绘制图形
+    function drawShape(positionData) {
+      var shape;
+      //当positionData为数组时绘制最终图，如果为function则绘制动态图
+      var arr = typeof positionData.getValue === 'function' ? positionData.getValue(0) : positionData;
+      shape = viewer.entities.add({
+        name: '矩形',
+        rectangle: {
+          coordinates: new Cesium.CallbackProperty(function () {
+            var obj = Cesium.Rectangle.fromCartesianArray(arr);
+            return obj;
+          }, false),
+          material: Cesium.Color.RED.withAlpha(0.5)
+        }
+      });
+      return shape;
+    }
+    
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    //鼠标左键
+    handler.setInputAction(function (event) {
+      // 用 `viewer.scene.pickPosition` 代替 `viewer.camera.pickEllipsoid`
+      // 当鼠标在地形上移动时可以得到正确的点.
+      var earthPosition = viewer.scene.pickPosition(event.position);
+    
+      var cartographic = Cesium.Cartographic.fromCartesian(earthPosition);
+      var lon = Cesium.Math.toDegrees(cartographic.longitude);
+      var lat = Cesium.Math.toDegrees(cartographic.latitude);
+      var pointObj = {
+        经度: lon,
+        纬度: lat
+      }
+      points.push(pointObj);
+      // `如果鼠标不在地球上 则earthPosition是未定义
+    
+      //第一次点击时，通过CallbackProperty绘制动态图
+      if (activeShapePoints.length === 0) {
+        floatingPoint = drawPoint(earthPosition);
+        activeShapePoints.push(earthPosition);
+        //动态点通过CallbackProperty实时更新渲染
+        var dynamicPositions = new Cesium.CallbackProperty(function () {
+          return activeShapePoints;
+        }, false);
+        activeShape = drawShape(dynamicPositions);//绘制动态图
+      }
+      //添加当前点进activeShapePoints，实时渲染动态图
+      activeShapePoints.push(earthPosition);
+      drawPoint(earthPosition);
+    
+    
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    
+    
+    
+    
+    //鼠标移动
+    handler.setInputAction(function (event) {
+      if (Cesium.defined(floatingPoint)) {
+        var newPosition = viewer.scene.pickPosition(event.endPosition);     //获取鼠标移动最终位置
+        if (Cesium.defined(newPosition)) {
+          //动态去除数组中最后一个点，再添加最新一个点，保证只保留鼠标位置点
+          activeShapePoints.pop();
+          activeShapePoints.push(newPosition);
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    
+    
+    //鼠标右键
+    handler.setInputAction(function (event) {
+      activeShapePoints.pop();//去除最后一个动态点
+      if (activeShapePoints.length) {
+        drawShape(activeShapePoints);//绘制最终图
+      }
+      viewer.entities.remove(floatingPoint);//移除第一个点（重复了）
+      viewer.entities.remove(activeShape);//去除动态图形
+      floatingPoint = undefined;
+      activeShape = undefined;
+      activeShapePoints = [];
+    
+      //比较大小
+      var minLon = Math.min(...[points[0].经度, points[1].经度]),
+          maxLon = Math.max(...[points[0].经度, points[1].经度]),
+          minLat = Math.min(...[points[0].纬度, points[1].纬度]),
+          maxLat = Math.max(...[points[0].纬度, points[1].纬度]);
+    
+      calculation(minLon, maxLon, minLat, maxLat);
+  
+      viewer.entities.removeAll();
+      var excavateHeight = document.getElementById("excavateHeight").value;
+      var buryHeight =  document.getElementById("buryHeight").value;
+      drawResult(excavateHeight, buryHeight, minLon, maxLon, minLat, maxLat);
+      //清空填挖点
+      points = [];
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+    
+    
+    
+    viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(114.40372, 30.52252, 2000)
+    });
+    </script>
+  </body>
+
+  </html>

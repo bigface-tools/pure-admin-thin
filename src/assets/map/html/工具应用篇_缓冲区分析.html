@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具应用篇_缓冲区分析</title>
+    <script src="./Build/CesiumUnminified/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/CesiumUnminified/Widgets/widgets.css">
+    <!-- 引入turf.js -->
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            terrainProvider: Cesium.createWorldTerrain(),
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具 
+        });
+
+        //格式转换  将点数据拆成一个大数组
+        function pointsFormatConv(points) {
+            let degreesArray = [];
+            //拆分合并
+            points.map(item => {
+                degreesArray.push(item[0]);
+                degreesArray.push(item[1]);
+            });
+            return degreesArray;
+        }
+
+        // 添加缓冲区
+        function addBuffer(positions) {
+            viewer.entities.add({
+                polygon: {
+                    hierarchy: new Cesium.PolygonHierarchy(positions),
+                    material: Cesium.Color.RED.withAlpha(0.7),
+                },
+            });
+        }
+
+
+
+        // 添加点
+        function addPoint(point) {
+            viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(point[0], point[1]),
+                point: {
+                    pixelSize: 9,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    color: Cesium.Color.BLUE,
+                },
+            });
+        }
+        // 初始化点缓冲
+        function initPointBuffer() {
+            let point = [114.40086, 30.51888];
+            addPoint(point);
+            //创建点要素
+            let pointF = turf.point(point);
+            let buffered = turf.buffer(pointF, 60, { units: "meters" });
+
+            let coordinates = buffered.geometry.coordinates;
+            let points = coordinates[0];
+            /* console.log('points',points); */
+            let degreesArray = pointsFormatConv(points);
+            /* console.log('degreesArray',degreesArray); */
+            addBuffer(Cesium.Cartesian3.fromDegreesArray(degreesArray));
+        }
+        
+
+
+
+
+        //添加线
+        function addPolyline(positions) {
+            viewer.entities.add({
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArray(positions),
+                    width: 2,
+                    material: Cesium.Color.BLUE,
+                    clampToGround: true
+                }
+            })
+        }
+        //初始化线缓冲
+        function initPolylineBuffer() {
+            let points = [
+                [114.3950, 30.5200],
+                [114.3990, 30.5200],
+                [114.4020, 30.5230],
+            ];
+            let degreesArray = pointsFormatConv(points);
+            addPolyline(degreesArray);
+            //创建线要素
+            let polylineF = turf.lineString(points);
+            //创建缓冲区
+            let buffered = turf.buffer(polylineF, 30, { units: 'meters' });
+            let coordinates = buffered.geometry.coordinates;
+            points = coordinates[0];
+            degreesArray = pointsFormatConv(points);
+            addBuffer(Cesium.Cartesian3.fromDegreesArray(degreesArray));
+        }
+        
+
+
+
+        //添加面
+        function addPolygon(positions) {
+            viewer.entities.add({
+                polygon: {
+                    hierarchy: new Cesium.PolygonHierarchy(positions),
+                    material: Cesium.Color.BLUE.withAlpha(0.6),
+                }
+            });
+        }
+        //初始化面缓冲
+        function initPolygonBuffer() {
+            let points = [
+                [114.3940, 30.5220],
+                [114.3970, 30.5220],
+                [114.3980, 30.5240],
+                [114.3960, 30.5250],
+                [114.3940, 30.5220],
+            ];
+            let degreesArray = pointsFormatConv(points);
+            addPolygon(Cesium.Cartesian3.fromDegreesArray(degreesArray));
+            //创建面要素
+            let polygonF = turf.polygon([points]);
+            let buffered = turf.buffer(polygonF, 60, { units: 'meters' });
+            let coordinates = buffered.geometry.coordinates;
+            points = coordinates[0];
+            degreesArray = pointsFormatConv(points);
+            addBuffer(Cesium.Cartesian3.fromDegreesArray(degreesArray));
+        }
+
+
+        //初始化缓冲区
+        initPointBuffer();
+        initPolylineBuffer();
+        initPolygonBuffer();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //调整相机视角
+        viewer.scene.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(114.40086, 30.51888, 2000),
+            //destination: Cesium.Cartesian3.fromDegrees(-74.0012351579127, 40.715093849131, 1000),
+        });
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

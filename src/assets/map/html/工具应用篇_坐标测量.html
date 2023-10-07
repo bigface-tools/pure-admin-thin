@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_坐标测量</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		//viewer.scene.globe.depthTestAgainstTerrain = false;//开启深度检测后 会有高程遮挡效果
+
+		var tileset = viewer.scene.primitives.add(
+			new Cesium.Cesium3DTileset({
+				url: './倾斜摄影/大雁塔3DTiles/tileset.json'
+			})
+		);
+		viewer.zoomTo(tileset);
+
+		//实例化屏幕空间事件ScreenSpaceEventHandler对象
+		var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		//实例化标签集合并添加至场景中
+		var annotations = viewer.scene.primitives.add(
+			new Cesium.LabelCollection()
+		);
+
+
+		//添加点
+		function createPoint(worldPosition) {
+			var point = viewer.entities.add({
+				position: worldPosition,
+				point: {
+					color: Cesium.Color.CRIMSON,
+					pixelSize: 9,
+					outlineColor: Cesium.Color.ALICEBLUE,
+					outlineWidth: 2,
+					disableDepthTestDistance: 1000	//当距离在1000以下不被高程遮挡
+				}
+			});
+			return point;
+		}
+
+		//添加点和标注框
+		function annotate(cartesian, lng, lat, height) {
+			//创建点
+			createPoint(cartesian);
+			//添加标注框
+			annotations.add({
+				position: cartesian,
+				text:
+					'Lon: ' + lng.toFixed(5) + '\u00B0' +
+					'\nLat: ' + lat.toFixed(5) + '\u00B0' +
+					"\nheight: " + height.toFixed(2) + "m",
+				showBackground: true,
+				font: '22px monospace',
+				horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+				verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+				disableDepthTestDistance: Number.POSITIVE_INFINITY
+			});
+		}
+
+		
+
+		//鼠标左键点击事件
+		handler.setInputAction(function (evt) {
+			var pickedObject = viewer.scene.pick(evt.position);//判断是否拾取到模型
+      console.log('pickedObject',pickedObject);
+			//如果拾取到模型
+			if (viewer.scene.pickPositionSupported && Cesium.defined(pickedObject)) {
+				var cartesian = viewer.scene.pickPosition(evt.position);
+				if (Cesium.defined(cartesian)) {
+					var cartographic = Cesium.Cartographic.fromCartesian(cartesian); //根据笛卡尔坐标获取到弧度
+					var lng = Cesium.Math.toDegrees(cartographic.longitude); //根据弧度获取到经度
+					var lat = Cesium.Math.toDegrees(cartographic.latitude); //根据弧度获取到纬度
+					var height = cartographic.height;//模型高度
+					annotate(cartesian, lng, lat, height);
+				}
+			}
+			/* //如果未拾取到模型,拾取到地形
+			else {
+				//在世界坐标系中从屏幕坐标向场景中创建射线
+				var ray = viewer.camera.getPickRay(evt.position);
+				//找到射线与渲染的地球表面之间的交点 值为Cartesian3类型
+				var cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+				if (Cesium.defined(cartesian)) {
+					//根据交点得到经纬度、高度信息并添加点和标签
+					var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+					var lng = Cesium.Math.toDegrees(cartographic.longitude); //根据弧度获取到经度
+					var lat = Cesium.Math.toDegrees(cartographic.latitude); //根据弧度获取到纬度
+					var height = cartographic.height;//高度
+					annotate(cartesian, lng, lat, height);
+				}
+			} */
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
+
+
+
+
+		//鼠标右键点击,删除点和标注框
+		handler.setInputAction(function () {
+			//清除点
+			viewer.entities.removeAll()
+			//清除标注框
+			annotations.removeAll();
+		}, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+
+	</script>
+</body>
+
+</html>

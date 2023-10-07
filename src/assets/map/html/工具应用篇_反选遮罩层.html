@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_反选遮罩层</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		/* // 是否支持图像渲染像素化处理
+        if (Cesium.FeatureDetection.supportsImageRenderingPixelated()) {
+            viewer.resolutionScale = window.devicePixelRatio
+        }
+        // 开启抗锯齿
+        viewer.scene.postProcessStages.fxaa.enabled = true */
+
+		//大区域坐标，够用即可，不必太大,要形成闭环
+		var pointArr1 = [114.3944, 30.5237, 114.3943, 30.5192, 114.4029, 30.5192, 114.4029, 30.5237, 114.3944, 30.5237];
+		var positions = Cesium.Cartesian3.fromDegreesArray(pointArr1);
+		//洞的坐标，要形成闭环
+		var pointArr2 = [114.3972, 30.5224, 114.3972, 30.5218, 114.3988, 30.5218, 114.3988, 30.5224, 114.3972, 30.5224];
+		var hole = Cesium.Cartesian3.fromDegreesArray(pointArr2);
+
+
+
+
+		//绘制遮罩函数
+		function drawMask(positions, hole) {
+			// 带洞区域
+			var mask = viewer.entities.add({
+				polygon: {
+					// 获取指定属性（positions，holes（图形内需要挖空的区域））
+					hierarchy: {
+						positions: positions,
+						holes: [{ positions: hole }],
+					},
+					// 填充的颜色，withAlpha透明度
+					material: Cesium.Color.BLACK.withAlpha(0.7),
+					// 是否被提供的材质填充
+					fill: true,
+				},
+			});
+			var hightlightLine = viewer.entities.add({
+				polyline: {
+					positions: hole,
+					width: 3,
+					material: Cesium.Color.AQUA.withAlpha(1),
+					clampToGround: true,
+				},
+			});
+		}
+
+		//绘制反选遮罩层
+		drawMask(positions, hole);
+		//设置相机视角
+		viewer.camera.setView({
+			destination: Cesium.Cartesian3.fromDegrees(114.3981, 30.5221, 300)
+		});
+
+
+
+
+
+
+
+
+
+	</script>
+</body>
+
+</html>

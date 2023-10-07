@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .toolbar {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            background-color: rgb(0, 0, 0, 0);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <div class="toolbar">
+        <select id="dropdown" onchange="change()">
+            <option value="edit1">视频材质</option>
+            <option value="edit2">视频重复</option>
+        </select>
+    </div>
+
+    <video id="myVideo" muted="true" autoplay="true" loop="true" style="display: none;">
+        <source src="https://cesium.com/public/SandcastleSampleData/big-buck-bunny_trailer.mp4" type="video/mp4">
+    </video>
+
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            timeline: false,
+            animation: false,
+            fullscreenButton: false,
+
+        });
+
+        //viewer.scene.globe.depthTestAgainstTerrain = false;
+
+
+
+        const videoElement = document.getElementById("myVideo");
+        //将视频元素与模拟时钟同步
+        let synchronizer = new Cesium.VideoSynchronizer({
+            clock: viewer.clock,
+            element: videoElement
+        });
+        viewer.clock.shouldAnimate = true;
+
+        var sphere = viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(104, 39, 2200),
+            ellipsoid: {
+                radii: new Cesium.Cartesian3(1000, 1000, 1000),
+                material: videoElement,
+            },
+        });
+        //相机视角锁定sphere
+        viewer.trackedEntity = sphere;
+
+
+        //改变视频重复个数
+        var isRepeat = false;
+        sphere.ellipsoid.material.repeat = new Cesium.CallbackProperty(
+            function (result) {
+                if (isRepeat) {
+                    result.x = 8;
+                    result.y = 8;
+                } else {
+                    result.x = 1;
+                    result.y = 1;
+                }
+                return result;
+            },
+            false
+        );
+
+
+
+        var dropdown = document.getElementById('dropdown');
+        function change() {
+            switch (dropdown.value) {
+                case 'edit1':
+                    isRepeat = false;
+                    break;
+                case 'edit2':
+                    isRepeat = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    </script>
+</body>
+
+</html>

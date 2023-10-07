@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场景绘制篇_坐标转换</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium//Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: false, //是否显示动画工具
+            timeline: false,  //是否显示时间轴工具
+            fullscreenButton: false,  //是否显示全屏按钮工具
+        });
+        viewer.scene.globe.depthTestAgainstTerrain = true
+
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function (movement) {
+            //屏幕坐标
+            console.log('屏幕坐标：', movement.position);
+
+            //屏幕坐标 转 世界坐标（场景坐标，包括地形、倾斜摄影模型等的坐标）
+            var cartesian3= viewer.scene.pickPosition(movement.position);    //注意此处的屏幕坐标一定要在球上，否则结果为undefined
+            console.log('屏幕坐标转世界坐标（场景）：', cartesian3);
+
+            //屏幕坐标 转 世界坐标（地表坐标，包括地形但不包括模型、倾斜摄影等）
+            var ray = viewer.camera.getPickRay(movement.position);
+            var cartesian3 = viewer.scene.globe.pick(ray, viewer.scene);
+            console.log('屏幕坐标转世界坐标（地表）：', cartesian3);
+
+            //屏幕坐标 转 世界坐标（椭球面坐标，不包括地形、模型、倾斜摄影等）
+            var cartesian3= viewer.scene.camera.pickEllipsoid(movement.position)
+            console.log('屏幕坐标转世界坐标（椭球面）：', cartesian3);
+
+            //世界坐标 转 屏幕坐标
+            var cartesian2 = Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene, cartesian3)
+            console.log('世界坐标转屏幕坐标：', cartesian2);
+
+            //世界坐标 转 WGS84坐标，结果为弧度形式
+            var cartographic = Cesium.Cartographic.fromCartesian(cartesian3);
+            console.log('世界坐标转WGS84弧度坐标：', cartographic);
+            
+            //WGS84弧度坐标 转 经纬度坐标
+            longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            height = cartographic.height;
+            console.log('WGS84弧度坐标转WGS84经纬度坐标：' + longitude + ',' + latitude + ',' + height);
+
+            //WGS84经纬度坐标 转 弧度坐标
+            var radians = Cesium.Cartographic.fromDegrees(longitude, latitude, height);
+            console.log('WGS84经纬度转WGS84弧度坐标', radians);
+
+            //WGS84经纬度坐标 转 世界坐标
+            var position = Cesium.Cartesian3.fromDegrees(longitude, latitude, height);
+            console.log('WGS84经纬度转世界坐标', position);
+
+            //WGS84弧度坐标 转 世界坐标
+            var position2 = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, cartographic.height);
+            console.log('WGS84弧度转世界坐标', position2);
+
+
+
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>工具应用篇_开启地下模式</title>
+  <script src="./Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+</head>
+<style>
+  html,
+  body,
+  #cesiumContainer {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+
+  <div id="cesiumContainer"></div>
+
+  <script>
+
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      terrainProvider: Cesium.createWorldTerrain()
+    });
+   /*  viewer.scene.globe.depthTestAgainstTerrain = true;//开启深度监测 */
+
+    var modelEntity = viewer.entities.add({
+      name: "教室",
+      position: new Cesium.Cartesian3.fromDegrees(120.14046454, 30.27415039,0),
+      model: {
+        uri: './3D格式数据/glTF/别墅1.gltf',
+        /* uri: './3D格式数据/教室/scene.gltf', */
+        scale:1
+      },
+    });
+    viewer.zoomTo(modelEntity);
+
+    //设置鼠标进去地下
+    viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
+    //设置地球透明
+    viewer.scene.globe.translucency.enabled = true;
+    viewer.scene.globe.translucency.frontFaceAlphaByDistance = new Cesium.NearFarScalar(400.0, 0.5, 8000, 0.9);
+
+
+
+
+  </script>
+</body>
+
+</html>

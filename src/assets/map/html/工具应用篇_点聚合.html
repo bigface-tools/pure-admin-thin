@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_点聚合</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+		});
+
+		
+
+		//定义聚和标签样式
+		var pinBuilder = new Cesium.PinBuilder();
+		//fromText中三个参数分别为 label内容、颜色、大小
+		var pin100 = pinBuilder
+			.fromText("100+", Cesium.Color.RED, 70)
+			.toDataURL();
+		var pin70 = pinBuilder
+			.fromText("70+", Cesium.Color.GOLD, 65)
+			.toDataURL();
+		var pin50 = pinBuilder
+			.fromText("50+", Cesium.Color.BLUE, 60)
+			.toDataURL();
+		var pin40 = pinBuilder
+			.fromText("40+", Cesium.Color.GREEN, 55)
+			.toDataURL();
+		var pin30 = pinBuilder
+			.fromText("30+", Cesium.Color.YELLOW, 50)
+			.toDataURL();
+		var pin20 = pinBuilder
+			.fromText("20+", Cesium.Color.CYAN, 45)
+			.toDataURL();
+		var pin10 = pinBuilder
+			.fromText("10+", Cesium.Color.AQUA, 40)
+			.toDataURL();
+		var singleDigitPins = new Array(9);
+		for (var i = 0; i < singleDigitPins.length; ++i) {
+			singleDigitPins[i] = pinBuilder
+				.fromText("" + (i + 2), Cesium.Color.VIOLET, 40)
+				.toDataURL();
+		}
+
+		//加载点数据
+		var kmlDataSourcePromise = viewer.dataSources.add(
+			Cesium.KmlDataSource.load(
+				"./矢量文件/kml/facilities/facilities.kml",
+			)
+		);
+
+
+		kmlDataSourcePromise.then(function (dataSource) {
+			
+			dataSource.clustering.enabled = true;
+			dataSource.clustering.minimumClusterSize = 2;
+
+			//添加事件监听
+			dataSource.clustering.clusterEvent.addEventListener(
+				function (clusteredEntities, cluster) {
+					cluster.label.show = false;
+					cluster.billboard.show = true;
+					cluster.billboard.id = cluster.label.id;
+					cluster.billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+					if (clusteredEntities.length >= 100) {
+						cluster.billboard.image = pin100;
+					}else if (clusteredEntities.length >= 70) {
+						cluster.billboard.image = pin70;
+					}else if (clusteredEntities.length >= 50) {
+						cluster.billboard.image = pin50;
+					} else if (clusteredEntities.length >= 40) {
+						cluster.billboard.image = pin40;
+					} else if (clusteredEntities.length >= 30) {
+						cluster.billboard.image = pin30;
+					} else if (clusteredEntities.length >= 20) {
+						cluster.billboard.image = pin20;
+					} else if (clusteredEntities.length >= 10) {
+						cluster.billboard.image = pin10;
+					} else {
+						cluster.billboard.image =
+							singleDigitPins[clusteredEntities.length - 2];
+					}
+				}
+			);
+
+
+			/* afterAddDataSource(dataSource); */
+		});
+
+
+
+		/* var removeListener
+		function afterAddDataSource(dataSource) {
+			var pixelRange = 59;
+			var minimumClusterSize = 2;
+			var enabled = true;
+
+			dataSource.clustering.enabled = enabled;
+			dataSource.clustering.pixelRange = pixelRange;
+			dataSource.clustering.minimumClusterSize = minimumClusterSize;
+
+			var pinBuilder = new Cesium.PinBuilder();
+			var pin100 = pinBuilder
+				.fromText("100+", Cesium.Color.RED, 48)
+				.toDataURL();
+			var pin50 = pinBuilder
+				.fromText("50+", Cesium.Color.RED, 48)
+				.toDataURL();
+			var pin40 = pinBuilder
+				.fromText("40+", Cesium.Color.ORANGE, 48)
+				.toDataURL();
+			var pin30 = pinBuilder
+				.fromText("30+", Cesium.Color.YELLOW, 48)
+				.toDataURL();
+			var pin20 = pinBuilder
+				.fromText("20+", Cesium.Color.GREEN, 48)
+				.toDataURL();
+			var pin10 = pinBuilder
+				.fromText("10+", Cesium.Color.BLUE, 48)
+				.toDataURL();
+			var singleDigitPins = new Array(8);
+			for (var i = 0; i < singleDigitPins.length; ++i) {
+				singleDigitPins[i] = pinBuilder
+					.fromText("" + (i + 2), Cesium.Color.VIOLET, 48)
+					.toDataURL();
+			}
+			customStyle();
+			function customStyle() {
+				if (Cesium.defined(removeListener)) {
+					removeListener();
+					removeListener = undefined;
+				} else {
+					removeListener = dataSource.clustering.clusterEvent.addEventListener(
+						function (clusteredEntities, cluster) {
+							cluster.label.show = false;
+							cluster.billboard.show = true;
+							cluster.billboard.id = cluster.label.id;
+							cluster.billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+							if (clusteredEntities.length >= 100) {
+								cluster.billboard.image = pin100;
+							} else if (clusteredEntities.length >= 50) {
+								cluster.billboard.image = pin50;
+							} else if (clusteredEntities.length >= 40) {
+								cluster.billboard.image = pin40;
+							} else if (clusteredEntities.length >= 30) {
+								cluster.billboard.image = pin30;
+							} else if (clusteredEntities.length >= 20) {
+								cluster.billboard.image = pin20;
+							} else if (clusteredEntities.length >= 10) {
+								cluster.billboard.image = pin10;
+							} else {
+								cluster.billboard.image =
+									singleDigitPins[clusteredEntities.length - 2];
+							}
+						}
+					);
+				}
+				// force a re-cluster with the new styling
+				var pixelRange = dataSource.clustering.pixelRange;
+				dataSource.clustering.pixelRange = 0;
+			}
+		}
+
+ */
+
+
+
+
+
+
+
+
+
+
+	</script>
+</body>
+
+</html>

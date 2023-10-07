@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>工具应用篇_日照分析</title>
+	<script src="./Build/Cesium/Cesium.js"></script>
+	<link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.toolbar {
+			position: absolute;
+			top: 10px;
+			left: 20px;
+			background-color: rgb(0, 0, 0, 0);
+
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer">
+	</div>
+	<div class="toolbar">
+		<input type="text" id="Date" value="2021-5-10" placeholder="请输入分析日期" maxlength="10"><br>
+		<input type="text" id="Ktime" value="8" placeholder="请输入开始时间" maxlength="6"><br>
+		<input type="text" id="Ttime" value="18" placeholder="请输入停止时间" maxlength="6"><br>
+		<button class="kjfxbutton" onclick="setvisible()">开始</button>
+		<button class="kjfxbutton" onclick="guanbi()">清除</button>
+		</tr>
+	</div>
+
+
+
+	<script>
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+		var viewer = new Cesium.Viewer("cesiumContainer", {
+			animation: false, //是否显示动画工具
+			timeline: false,  //是否显示时间轴工具
+			fullscreenButton: false,  //是否显示全屏按钮工具
+			terrainProvider: Cesium.createWorldTerrain()
+		});
+
+		//设置每个阴影贴图的宽度和高度（以像素为单位）
+		viewer.shadowMap.size = 8192;
+		viewer.shadowMap.darkness = 0.1;
+
+		//添加OSM建筑白膜数据
+		var osmBuildingsTileset = Cesium.createOsmBuildings();
+		viewer.scene.primitives.add(osmBuildingsTileset);
+
+		//调整相机视角
+		viewer.scene.camera.setView({
+			destination: Cesium.Cartesian3.fromDegrees(114.29964, 30.61214, 2000),
+			//destination:Cesium.Cartesian3.fromDegrees(-74.0012351579127,40.715093849131,1000),
+		});
+
+
+		function stratPlay() {
+			viewer.shadows = true;//开启阴影
+			viewer.clock.shouldAnimate = true
+			//定义变量
+			var text1 = document.getElementById("Date");
+			var text2 = document.getElementById("Ktime");
+			var text3 = document.getElementById("Ttime");
+			var e = text1.value,
+				t = new Date(e),
+				i = text2.value,
+				a = text3.value,
+				r = new Date(new Date(t).setHours(Number(i))),
+				o = new Date(new Date(t).setHours(Number(a)));
+			//设置参数
+			viewer.scene.globe.enableLighting = true,
+				viewer.shadows = true,
+				viewer.clock.startTime = Cesium.JulianDate.fromDate(r),
+				viewer.clock.currentTime = Cesium.JulianDate.fromDate(r),
+				viewer.clock.stopTime = Cesium.JulianDate.fromDate(o),
+				//到达stopTime后时钟跳转到startTime
+				viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP, 
+				viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER,
+				viewer.clock.multiplier = 1600
+		}
+
+
+		function setvisible() {
+			if (document.getElementById("Date").value == "" || 
+				document.getElementById("Ktime").value == "" || 
+				document.getElementById("Ttime").value == "") 
+			{
+				alert("请输入有效参数！");
+			}
+			else {
+				//开始模拟
+				stratPlay();
+			}
+		}
+
+		function guanbi() {
+			viewer.scene.globe.enableLighting = false; //关闭光照
+			viewer.shadows = false;//关闭阴影
+		}
+
+
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼠标事件_中键点击</title>
+    <script src="./Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer">
+    </div>
+
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            geocoder: true,  //是否显示地名查找工具
+            homeButton: true,    //是否显示首页位置工具
+            sceneModePicker: true,   //是否显示视角模式切换工具
+            baseLayerPicker: true,   //是否显示默认图层选择工具
+            navigationHelpButton: true,  //是否显示导航帮助工具
+            animation: true, //是否显示动画工具
+            timeline: true,  //是否显示时间轴工具
+            fullscreenButton: true,  //是否显示全屏按钮工具
+        });
+
+        let handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function (event) {
+            console.log('中键点击：', event.position);
+        }, Cesium.ScreenSpaceEventType.MIDDLE_CLICK);
+        // 移除屏幕空间事件
+        //handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK, Cesium.KeyboardEventModifier.SHIFT);
+    </script>
+</body>
+
+</html>

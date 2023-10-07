@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="description" content="Particle system fireworks.">
+  <meta name="cesium-sandcastle-labels" content="Beginner, Showcases">
+  <title>材质特效篇_粒子火焰</title>
+  <link rel="stylesheet" href="./Build/Cesium/Widgets/widgets.css">
+  <script src="./Build/Cesium/Cesium.js"></script>
+
+</head>
+<style>
+  html,
+  body,
+  #cesiumContainer {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+
+  <div id="cesiumContainer"></div>
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGM4MDcxOS05Zjk3LTQ2YmMtYjAxYi0zYTczNWFkYzFlN2EiLCJpZCI6NzY0NTcsImlhdCI6MTYzOTQ2ODI2NH0.Zsp28WnnCpj4wlAIQwIwcSob228zSaz510QE3zKQN58';
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+      animation: false, //是否显示动画工具
+      timeline: false,  //是否显示时间轴工具
+      fullscreenButton: false,  //是否显示全屏按钮工具
+      shouldAnimate: true,  //必须开启 自动播放动画
+    });
+
+    // 加载飞机模型
+    var entity = viewer.entities.add({
+      model: {
+        uri: './3D格式数据/glb/Cesium_Air.glb',
+        minimumPixelSize: 64
+      },
+      position: Cesium.Cartesian3.fromDegrees(114.39264, 30.52252, 100)
+    });
+    //视角追踪模型
+    viewer.trackedEntity = entity;
+
+    //计算把粒子系统从模型坐标系转到世界坐标系指定原点的矩阵
+    const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(
+      Cesium.Cartesian3.fromDegrees(114.39264, 30.52252, 100)
+    );
+
+
+    //计算模型坐标系的平移矩阵
+    function computeEmitterModelMatrix() {
+      //定义粒子发射器的方向、俯仰角以及翻滚角
+      var hpr = Cesium.HeadingPitchRoll.fromDegrees(0.0, 0.0, 0.0, new Cesium.HeadingPitchRoll());
+      //定义一个由平移，旋转和缩放定义的仿射变换
+      var trs = new Cesium.TranslationRotationScale();
+      //火焰位置
+      //平移
+      trs.translation = Cesium.Cartesian3.fromElements(2.5, 4.0, 1.0, new Cesium.Cartesian3());
+      //旋转
+      trs.rotation = Cesium.Quaternion.fromHeadingPitchRoll(hpr, new Cesium.Quaternion());
+      return Cesium.Matrix4.fromTranslationRotationScale(trs, new Cesium.Matrix4());
+    }
+
+
+
+    var particleSystem = new Cesium.ParticleSystem({
+      image: './RasterImage/图片/fire.png',
+      startScale: 1.0,  //开始比例
+      endScale: 4.0,  //结束比例
+      particleLife: 1.0,   //粒子生命周期
+      speed: 5.0, //粒子速度
+      imageSize: new Cesium.Cartesian2(20, 20),   //粒子图形尺寸
+      emissionRate: 5.0,  //每秒发射粒子个数
+      lifetime: 16.0,   //粒子系统发射粒子的时间
+      modelMatrix: modelMatrix,  //将粒子系统从模型转换为世界坐标的4x4转换矩阵
+      emitterModelMatrix: computeEmitterModelMatrix() //在粒子系统局部坐标系内转换粒子系统发射器的4x4转换矩阵
+    })
+    viewer.scene.primitives.add(particleSystem);
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>
